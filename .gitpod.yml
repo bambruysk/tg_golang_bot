@@ -1,8 +1,14 @@
 image:
   file: .gitpod.Dockerfile
 
+checkoutLocation: "go/src/github.com/bambruysk/tg_golang_bot"
+workspaceLocation: "go/src/github.com/bambruysk/tg_golang_bot"
+
 tasks:
-  - init: dep ensure
+  - init: dep ensure >
+      go build -o app
+    command: >
+      ./app
 
 vscode:
   extensions:
