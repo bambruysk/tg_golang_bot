@@ -1,14 +1,16 @@
 
-
-
 package main
 
 import (
 	"log"
 	"time"
 
+
 	tb "gopkg.in/tucnak/telebot.v2"
 )
+
+
+
 
 func main() {
 	b, err := tb.NewBot(tb.Settings{
@@ -28,6 +30,14 @@ func main() {
 	log.Println("Bot started")
 
 	b.Handle("/hello", func(m *tb.Message) {
+		log.Println("Message", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName )
+		b.Send(m.Sender, "Hello World!")
+	})
+
+	b.Handle(tb.OnText, func(m *tb.Message) {
+
+		log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName )
+		log.Println("Message", m.Text )
 		b.Send(m.Sender, "Hello World!")
 	})
 
