@@ -2,11 +2,6 @@ package main
 
 import "errors"
 
-type Holde struct {
-	Name string
-	ID   int
-}
-
 type Player struct {
 	Name   string
 	Holdes []Holde
