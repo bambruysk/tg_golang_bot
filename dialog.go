@@ -6,18 +6,18 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-type DialogState DialogNode
+type DialogState int
 
-/*
+
 const (
 	// userState
 	IDLE DialogState = iota
 	UserSettings
 	MainMenu
 	HoldeCalc
+	AddHolde
 )
 
-*/
 // Пользователь
 type User struct {
 	State DialogState
@@ -136,8 +136,6 @@ func (dn DialogNode)  Send(*tg.Bot, tg.Recipient, *tg.SendOptions) (*tg.Message,
 
 func (dn DialogNode) GetHandler () interface{} {
 	return func 
-
-
 }
 
 // Next compute next DialogNode from update for user
@@ -157,9 +155,34 @@ var (
 	btnSettings   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Настройки")
 	btnCalculator = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Поместья")
 	btnMainMenu   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Главное меню")
+	btnAddHolde = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Добавить поместье")
+	
 )
 
+
+
+
 var users UserStorager
+
+
+
+func TextHandler (m * tb.Message) {
+	user_id := UserID(m.Sender.ID)
+	user, exist := users.Get(user_id)
+	text := m.Text
+	if !exist {return;}
+	switch user.State {
+	case PlayerName : {
+		pl_name := m.Text
+
+	}
+	case AddHolde :
+		holde_num = 
+
+		
+	}
+
+}
 
 func CreateDialog(bot *tb.Bot, enterPoint interface{}) {
 
