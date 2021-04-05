@@ -8,7 +8,6 @@ import (
 
 type DialogState int
 
-
 const (
 	// userState
 	IDLE DialogState = iota
@@ -32,9 +31,6 @@ func NewUser() User {
 		State: CreateDeaultState(),
 	}
 }
-
-
-
 
 /// Хранилище пользователей, потом заменим на BD
 
@@ -108,8 +104,6 @@ type DialogNode struct {
 	HasKeyboard bool
 }
 
-
-
 func NewDialogNode(content DialogContent, buttons ...tb.Btn) DialogNode {
 	keyboard := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
@@ -125,18 +119,18 @@ func NewDialogNode(content DialogContent, buttons ...tb.Btn) DialogNode {
 		Keyboard: keyboard,
 	}
 }
+
 /// Implement sendable inteface of telebot
-func (dn DialogNode)  Send(*tg.Bot, tg.Recipient, *tg.SendOptions) (*tg.Message, error) {
+func (dn DialogNode) Send(*tb.Bot, tb.Recipient, *tb.SendOptions) (*tb.Message, error) {
 	// not implemented yet
 
-	return &tg.Message{}, errors.New("Not implemented yet")
+	return &tb.Message{}, errors.New("Not implemented yet")
 
 }
 
-
-func (dn DialogNode) GetHandler () interface{} {
-	return func 
-}
+// func (dn DialogNode) GetHandler () interface{} {
+// 	return func
+// }
 
 // Next compute next DialogNode from update for user
 func (dn *DialogNode) Next(update interface{}) DialogNode {
@@ -155,17 +149,12 @@ var (
 	btnSettings   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Настройки")
 	btnCalculator = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Поместья")
 	btnMainMenu   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Главное меню")
-	btnAddHolde = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Добавить поместье")
-	
+	btnAddHolde   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Добавить поместье")
 )
-
-
-
 
 var users UserStorager
 
-
-
+/*
 func TextHandler (m * tb.Message) {
 	user_id := UserID(m.Sender.ID)
 	user, exist := users.Get(user_id)
@@ -177,60 +166,53 @@ func TextHandler (m * tb.Message) {
 
 	}
 	case AddHolde :
-		holde_num = 
+		holde_num =
 
-		
+
 	}
 
 }
+*/
 
 func CreateDialog(bot *tb.Bot, enterPoint interface{}) {
+	/*
+	   	start_dn := NewDialogNode(DialogContent{
+	   		Message: "Добро пожаловать",
+	   		Media:   nil,
+	   	}, btnSettings, btnCalculator)
 
-	start_dn := NewDialogNode(DialogContent{
-		Message: "Добро пожаловать",
-		Media:   nil,
-	}, btnSettings, btnCalculator)
+	   	start_dn.HasKeyboard = true
 
-	start_dn.HasKeyboard = true
+	   	settings_dn := NewDialogNode(DialogContent{
+	   		Message: "Выберите настройку",
+	   		Media:   nil,
+	   	}, btnSettings, btnCalculator, btnMainMenu)
 
-	settings_dn := NewDialogNode(DialogContent{
-		Message: "Выберите настройку",
-		Media:   nil,
-	}, btnSettings, btnCalculator, btnMainMenu)
+	   	// Add starting point
+	   /*	*bot.Handle(enterPoint, func(m *tb.Message) {
 
-	// Add starting point
-	*bot.Handle(enterPoint, func(m *tb.Message) {
-		
-		user_id := UserID(m.Sender.ID)
+	   		user_id := UserID(m.Sender.ID)
 
-		user, created := users.GetOrCreate(user_id)
+	   		user, created := users.GetOrCreate(user_id)
 
-		*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
-	} )
-
+	   		*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
+	   	})
+	*/
 	// Setiings
-	
-	*bot.Handle(&btnSettings, func(m *tb.Message) {
-		
-		id := UserID(m.Sender.ID)
-		user, err := users.Get(id)
-		if 
-		user.SetState(settings_dn)
-		users.Update(id, user)
+	/*
+		*bot.Handle(&btnSettings, func(m *tb.Message) {
 
-		
+			id := UserID(m.Sender.ID)
+			user, err := users.Get(id)
+			//if
+			user.SetState(settings_dn)
+			users.Update(id, user)
 
-		*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
-	} )
-
-
-
+			*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
+		})
+	*/
 }
 
 func CreateDeaultState() DialogState {
-	return DialogState(NewDialogNode(DialogContent{
-		Message: "Добро пожаловать",
-		Media:   nil,
-	}, btnSettings, btnCalculator))
-
+	return IDLE
 }

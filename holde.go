@@ -20,38 +20,70 @@ func NewHoldeStorage() HoldeStorage {
 	return holdes
 }
 
+func getNeighbour(id int) []int {
+	if id < 0 || id >= HoldesNumber {
+		return nil
+	}
+	res := make([]int, 0)
+
+	// 0  1  2  3  4  5  6  7  8  9
+	if id >= WorldSizeX {
+		res = append(res, id-WorldSizeX)
+	}
+
+	// 90 91 92 93 94 95 96 97 98 99
+	if id < HoldesNumber-WorldSizeX { // 100 - 10
+		res = append(res, id+WorldSizeX)
+	}
+
+	//  00  10  20  30  40  50  60  70  80  90
+	if id%WorldSizeX != 0 {
+		res = append(res, id-1)
+	}
+	// 09 19 29 39 49 59 69 79 89 99
+	if id%WorldSizeX != WorldSizeX-1 {
+		res = append(res, id+1)
+	}
+
+	return res
+}
+
+func findCluster(id int, res *[]int, holdes, visited map[int]bool) {
+	_, ok := holdes[id]
+	if !ok {
+		return
+	}
+	_, ok = visited[id]
+	if ok {
+		return
+	}
+	visited[id] = true
+
+	*res = append(*res, id)
+	for _, n := range getNeighbour(id) {
+		findCluster(n, res, holdes, visited)
+	}
+
+}
+
 func calculateClusters(ids []int) [][]int {
-	// holde_map := make([][]bool, WorldSizeY)
-	// for i, _ := range holde_map {
-	// 	holde_map[i] = make([]bool, WorldSizeX)
-	// }
 
-	// for id := range ids {
-	// 	holde_map[id/WorldSizeX][id/WorldSizeY] = true
-	// }
-
-	holde_map := make([]bool, HoldesNumber)
+	holdeMap := make(map[int]bool)
 	visited := make(map[int]bool)
-	for id := range ids {
-		holde_map[id] = true
+	for _, id := range ids {
+		holdeMap[id] = true
 	}
 
 	res := make([][]int, 0)
 
-	cnt := len(ids)
-
-	dfs := func(id int) {
-
-		_, ok := visited[id]
-		if ok {
-			return
+	for holde := range holdeMap {
+		r := make([]int, 0)
+		findCluster(holde, &r, holdeMap, visited)
+		if len(r) > 0 {
+			res = append(res, r)
 		}
-		visited[id] = true
-
-		if id > WorldSizeX && holde_map[id-WorldSizeX] {
-
-		}
-
 	}
+
+	return res
 
 }

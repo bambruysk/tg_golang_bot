@@ -71,7 +71,7 @@ func main() {
 		// as it has to be for callback routing to work.
 		//
 		btnPrev = selector.Data("⬅", "prev")
-		btnNext = selector.Data("➡", "next")
+		//		btnNext = selector.Data("➡", "next")
 	)
 
 	var users UserStorager
@@ -85,7 +85,7 @@ func main() {
 	// 	selector.Row(btnPrev, btnNext),
 	// )
 
-	UpdateUserState := func(id string, state DialogState) {
+	UpdateUserState := func(id UserID, state DialogState) {
 		user, _ := users.Get(id)
 		user.SetState(MainMenu)
 		users.Update(id, user)
@@ -108,6 +108,7 @@ func main() {
 		if !m.Private() {
 			return
 		}
+		id := UserID(m.Sender.ID)
 		user, created := users.GetOrCreate(id)
 		user.SetState(MainMenu)
 		users.Update(id, user)
@@ -130,7 +131,7 @@ func main() {
 	})
 
 	b.Handle(&btnCalculator, func(m *tb.Message) {
-		UpdateUserState(string(m.Sender.ID), HoldeCalc)
+		UpdateUserState(UserID(m.Sender.ID), HoldeCalc)
 		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
