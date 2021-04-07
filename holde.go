@@ -1,9 +1,47 @@
 package main
 
+import (
+	"errors"
+	"math"
+	"time"
+)
+
+// type for money represnt
+type Money float64
+
+// Round money to for palyer payment
+func (m Money) Round() int {
+	return int(math.Round(float64(m)))
+}
+
+type HoldeGameSettings struct {
+	// Базовый доход на уровень в час
+	MoneyPerHour float64
+
+	// Коэфифициент синергии
+	SynergyCoeff float64
+
+	// Time degradation coeffs
+	TimeDegradation float64
+}
+
+// Holde - basic structures  for holde
 type Holde struct {
-	Name  string
-	ID    int
-	Money float64
+	// Имя поместья
+	Name string
+	// ID -  номер поместья
+	ID int
+	// Money - текущее накопелния
+	Amount Money
+
+	// Уровень
+	Level int
+
+	// Владелец
+	Owner string
+
+	//
+	LastVisit time.Time
 }
 
 // we not use decimal type for money. Money round to ceil, for players fun
@@ -12,12 +50,40 @@ var WorldSizeX = 10
 var WorldSizeY = 10
 var HoldesNumber = WorldSizeX * WorldSizeY
 
-type HoldeStorage map[int]Holde
+var Settings = HoldeGameSettings{
+	MoneyPerHour:    2,
+	SynergyCoeff:    1,
+	TimeDegradation: 0.2,
+}
+
+func (s HoldeGameSettings) GetSynergy(num int) float64 {
+	return float64(num) * s.SynergyCoeff
+}
+
+type HoldeStorage map[int]*Holde
 
 func NewHoldeStorage() HoldeStorage {
 	//TODO: load from json or db
 	holdes := make(HoldeStorage)
+	init_time := time.Now()
+	for i := 0; i < HoldesNumber; i++ {
+		holdes[i] = &Holde{
+			Name:      "",
+			ID:        i,
+			Amount:    0,
+			Level:     1,
+			Owner:     "",
+			LastVisit: init_time,
+		}
+	}
 	return holdes
+}
+
+func (hs HoldeStorage) Get(id int) (*Holde, error) {
+	if id < 0 || id >= HoldesNumber {
+		return nil, errors.New("Holde not found in storage")
+	}
+	return hs[id], nil
 }
 
 func getNeighbour(id int) []int {
@@ -86,4 +152,40 @@ func calculateClusters(ids []int) [][]int {
 
 	return res
 
+}
+
+func (h *Holde) Visit(dice int) Money {
+
+	//  time from last visit
+	hours := int(h.LastVisit.Sub(time.Now()).Hours())
+	// calculate money
+	money := Money(0)
+	for h := 0; h < hours; h++ {
+		money += Money(Settings.MoneyPerHour * (1 - float64(h)*Settings.TimeDegradation))
+	}
+	h.LastVisit = time.Now()
+
+	return money * Money(dice/5) // D10
+}
+
+func (hs HoldeStorage) CalculateHoldes(holdes []int) (Money, error) {
+	// Get holdes from storage
+	money := Money(0)
+	for _, h := range holdes {
+		hold, err := hs.Get(h)
+		if err != nil {
+			return 0, err
+		}
+		// 4 random number ;)
+		money += hold.Visit(4)
+	}
+	//
+	clusters := calculateClusters(holdes)
+	for _, c := range clusters {
+		if len(c) > 1 {
+			// add cluster bonus example
+			money += Money(len(c) * int(Settings.SynergyCoeff))
+		}
+	}
+	return money, nil
 }
