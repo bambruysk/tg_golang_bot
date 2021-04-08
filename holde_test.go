@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 )
 
 type NeighbourTestCase struct {
@@ -186,4 +187,19 @@ func TestCalculateClusters(t *testing.T) {
 
 	t.Fail()
 
+}
+
+func TestResponseText(t *testing.T) {
+	holde := Holde{
+		Name:      "My Holde",
+		ID:        15,
+		Amount:    12,
+		Level:     5,
+		Owner:     "Bambr",
+		LastVisit: time.Now(),
+	}
+	t.Log(holde.LastVisitString())
+
+	t.Log(holde.ResponseText())
+	t.Fail()
 }

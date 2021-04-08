@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strconv"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -154,25 +155,29 @@ var (
 
 var users UserStorager
 
-/*
-func TextHandler (m * tb.Message) {
+func TextHandler(m *tb.Message) {
 	user_id := UserID(m.Sender.ID)
 	user, exist := users.Get(user_id)
 	text := m.Text
-	if !exist {return;}
-	switch user.State {
-	case PlayerName : {
-		pl_name := m.Text
-
+	if !exist {
+		return
 	}
-	case AddHolde :
-		holde_num =
+	switch user.State {
+	case PlayerName:
+		{
+			pl_name := m.Text
 
+		}
+	case AddHolde:
+		holde_num, err := strconv.Atoi(m.Text)
+		if err != nil {
+			//  send er tor bot
+		}
+		// add holde to hold request
 
 	}
 
 }
-*/
 
 func CreateDialog(bot *tb.Bot, enterPoint interface{}) {
 	/*

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"math"
+	"strconv"
+	"text/template"
 	"time"
 )
 
@@ -12,6 +15,10 @@ type Money float64
 // Round money to for palyer payment
 func (m Money) Round() int {
 	return int(math.Round(float64(m)))
+}
+
+func (m Money) String() string {
+	return strconv.Itoa(m.Round())
 }
 
 type HoldeGameSettings struct {
@@ -42,6 +49,27 @@ type Holde struct {
 
 	//
 	LastVisit time.Time
+}
+
+func (h *Holde) LastVisitString() string {
+	return h.LastVisit.Format(time.Stamp)
+}
+
+const holdeDescription = `
+Поместье №{{.ID}} {{.Name}}
+
+Количество денег {{.Amount}}
+Уровень {{.Level}}
+Владелец {{.Owner}}
+Время последнего посещения {{.LastVisit}}
+`
+
+func (h Holde) ResponseText() string {
+	var buf bytes.Buffer
+
+	tmpl := template.Must(template.New("HoldeDescription").Parse(holdeDescription))
+	tmpl.Execute(&buf, h)
+	return buf.String()
 }
 
 // we not use decimal type for money. Money round to ceil, for players fun
