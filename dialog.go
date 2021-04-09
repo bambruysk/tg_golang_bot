@@ -21,6 +21,7 @@ const (
 // Пользователь
 type User struct {
 	State DialogState
+	CurrHolde int
 }
 
 func (u *User) SetState(state DialogState) {
@@ -30,8 +31,11 @@ func (u *User) SetState(state DialogState) {
 func NewUser() User {
 	return User{
 		State: CreateDeaultState(),
+		CurrHolde: -1,
 	}
 }
+
+func 
 
 /// Хранилище пользователей, потом заменим на BD
 

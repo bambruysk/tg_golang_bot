@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -39,6 +40,8 @@ func main() {
 
 	// b.Start()
 
+	holdeStorage := NewHoldeStorage()
+
 	var (
 
 		// Окно приветсвтия - регистрация  -
@@ -57,6 +60,13 @@ func main() {
 		// Universal markup builders.
 		menu     = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 		selector = &tb.ReplyMarkup{}
+
+		addHoldeMenuKeyboard =  &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+
+		addHoldeButton = addHoldeMenuKeyboard.Text("Добавить поместье")
+		addHoldeCancelButton = addHoldeMenuKeyboard.Text("Нет, другое")
+
+
 
 		// Reply buttons.
 		btnHelp = menu.Text("ℹ Help")
@@ -103,6 +113,7 @@ func main() {
 		mainMenu.Keyboard.Row(btnSettings),
 	)
 
+	
 	// Command: /start <PAYLOAD>
 	b.Handle("/start", func(m *tb.Message) {
 		if !m.Private() {
@@ -122,6 +133,55 @@ func main() {
 		}
 		b.Send(m.Sender, "Начнем", mainMenu)
 	})
+
+
+	b.Handle(tb.OnText, func (m* tb. Message) {
+		id := UserID(m.Sender.ID)
+
+		user, err :=  users.Get(id)
+		if err != nil {
+			b.Send(m.Sender, "Сkучилась какая то ошибка. давай начнем заово. Жми /start")
+			return
+		}
+		switch user.State {
+		case IDLE :{
+			b.Send(m.Sender, "Не понимаю. Жми /start")
+			return
+		}	
+		case AddHolde : {
+			holde_id := strconv.Atoi( m.Text)
+			if holde_id < 0 || holde_id > HoldesNumber {
+				b.Send(m.Sender, "Неправильынй нмоер поместья")
+				return
+			}
+			holde, err := holdeStorage.Get(holde_id)
+			if err !=  nil {
+				b.Send(m.Sender, "Неправильынй нмоер поместья")
+				return
+			} 
+			user.CurrHolde =  holde_id
+			b.Send(m.Sender, holde.ResponseText(),  addHoldeMenuKeyboard)
+
+		}
+
+		case EnterDice : {
+			dice := strconv.Atoi( m.Text)
+			if dice < 1 || dice > 10 {
+				b.Send(m.Sender, "Неправильынй бросок. Введеите 1- 10")
+				return
+			}
+			HoldeRequestItem{
+				HoldeID: 0,
+				Dice:    0,
+			}
+
+		} 
+
+		  user.State
+
+
+
+	} )
 
 	// On reply button pressed (message)
 	b.Handle(&btnHelp, func(m *tb.Message) {
