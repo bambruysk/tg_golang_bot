@@ -72,33 +72,28 @@ func (h Holde) ResponseText() string {
 	return buf.String()
 }
 
-// Request 
+// Request
 
 type HoldeRequestItem struct {
 	HoldeID int
-	Dice 	int
-
+	Dice    int
 }
 
 type HoldeRequest struct {
-	Holdes [] HoldeRequestItem
-	Owner string
-	User string 
+	Holdes []HoldeRequestItem
+	Owner  string
+	User   string
 }
 
 type HoldeResponce struct {
 	Amount Money
 }
 
+func (r *HoldeRequest) Calculate() HoldeResponce {
 
-
-
-
+}
 
 // we not use decimal type for money. Money round to ceil, for players fun
-
-
-
 
 var WorldSizeX = 10
 var WorldSizeY = 10

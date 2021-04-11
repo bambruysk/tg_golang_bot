@@ -41,6 +41,7 @@ func main() {
 	// b.Start()
 
 	holdeStorage := NewHoldeStorage()
+	playerStorage := NewPlayerStorage()
 
 	var (
 
@@ -61,12 +62,15 @@ func main() {
 		menu     = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 		selector = &tb.ReplyMarkup{}
 
-		addHoldeMenuKeyboard =  &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-		addHoldeButton = addHoldeMenuKeyboard.Text("Добавить поместье")
+		addHoldeButton       = addHoldeMenuKeyboard.Text("Добавить поместье")
 		addHoldeCancelButton = addHoldeMenuKeyboard.Text("Нет, другое")
 
+		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
+		calcHoldeButton    = addNewHoldeMenuKeyboard.Text("Обсчитать поместья")
+		addHoldeMoreButton = addHoldeMenuKeyboard.Text("Добавить еще поместий")
 
 		// Reply buttons.
 		btnHelp = menu.Text("ℹ Help")
@@ -113,7 +117,6 @@ func main() {
 		mainMenu.Keyboard.Row(btnSettings),
 	)
 
-	
 	// Command: /start <PAYLOAD>
 	b.Handle("/start", func(m *tb.Message) {
 		if !m.Private() {
@@ -134,55 +137,76 @@ func main() {
 		b.Send(m.Sender, "Начнем", mainMenu)
 	})
 
-
-	b.Handle(tb.OnText, func (m* tb. Message) {
+	b.Handle(tb.OnText, func(m *tb.Message) {
 		id := UserID(m.Sender.ID)
 
-		user, err :=  users.Get(id)
+		user, err := users.Get(id)
 		if err != nil {
 			b.Send(m.Sender, "Сkучилась какая то ошибка. давай начнем заово. Жми /start")
 			return
 		}
 		switch user.State {
-		case IDLE :{
-			b.Send(m.Sender, "Не понимаю. Жми /start")
-			return
-		}	
-		case AddHolde : {
-			holde_id := strconv.Atoi( m.Text)
-			if holde_id < 0 || holde_id > HoldesNumber {
-				b.Send(m.Sender, "Неправильынй нмоер поместья")
+		case IDLE:
+			{
+				b.Send(m.Sender, "Не понимаю. Жми /start")
 				return
 			}
-			holde, err := holdeStorage.Get(holde_id)
-			if err !=  nil {
-				b.Send(m.Sender, "Неправильынй нмоер поместья")
-				return
-			} 
-			user.CurrHolde =  holde_id
-			b.Send(m.Sender, holde.ResponseText(),  addHoldeMenuKeyboard)
+		case AddHolde:
+			{
+				holde_id, err := strconv.Atoi(m.Text)
+				if err != nil {
+					b.Send(m.Sender, "Неправильынй ноvер поместья")
+					return
+				}
+				if holde_id < 0 || holde_id > HoldesNumber {
+					b.Send(m.Sender, "Неправильынй нмоер поместья")
+					return
+				}
+				holde, err := holdeStorage.Get(holde_id)
+				if err != nil {
+					b.Send(m.Sender, "Неправильынй нмоер поместья")
+					return
+				}
+				user.CurrHolde = holde_id
+				user.Save()
+				b.Send(m.Sender, holde.ResponseText(), addHoldeMenuKeyboard)
 
+			}
+
+		case EnterDice:
+			{
+				dice := strconv.Atoi(m.Text)
+				if dice < 1 || dice > 10 {
+					b.Send(m.Sender, "Неправильынй бросок. Введеите 1- 10")
+					return
+				}
+				request := HoldeRequestItem{
+					HoldeID: user.CurrHolde,
+					Dice:    dice,
+				}
+
+				user.CurrPlayer.Request.Holdes = append(user.CurrPlayer.Request.Holdes, request)
+
+				b.Send(m.Sender, "Поместье добавлено! Хотите добавить еще? Введите номер поместья илли обсчитайте поместья", addNewHoldeMenuKeyboard)
+				user.SetState(AddHolde)
+			}
+
+		case EnterPlayerName:
+			{
+				playerName := m.Text
+				player, created := playerStorage.GetOrCreate(playerName)
+				user.CurrPlayer = &player
+
+				b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
+				user.SetState(AddHolde)
+			}
 		}
 
-		case EnterDice : {
-			dice := strconv.Atoi( m.Text)
-			if dice < 1 || dice > 10 {
-				b.Send(m.Sender, "Неправильынй бросок. Введеите 1- 10")
-				return
-			}
-			HoldeRequestItem{
-				HoldeID: 0,
-				Dice:    0,
-			}
+	})
 
-		} 
-
-		  user.State
-
-
-
-	} )
-
+	b.Handle(&calcHoldeButton, func (m * tb.Message) {
+		
+	}
 	// On reply button pressed (message)
 	b.Handle(&btnHelp, func(m *tb.Message) {
 		log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
@@ -197,22 +221,22 @@ func main() {
 
 	// Send hand
 
-	// On inline button pressed (callback)
-	b.Handle(&btnPrev, func(c *tb.Callback) {
-		// ...
-		// Always respond!
-		b.Respond(c, &tb.CallbackResponse{
-			Text: c.Message.Text,
-		})
-	})
+	// // On inline button pressed (callback)
+	// b.Handle(&btnPrev, func(c *tb.Callback) {
+	// 	// ...
+	// 	// Always respond!
+	// 	b.Respond(c, &tb.CallbackResponse{
+	// 		Text: c.Message.Text,
+	// 	})
+	// })
 
-	type DialogNode struct {
-		// Текст ии дугое сообщение оторжаео при переходе на данный узел
-		Content DialogContent
-		// Клавиатура
-		Keyboard *tb.ReplyMarkup
-		//
-	}
+	// type DialogNode struct {
+	// 	// Текст ии дугое сообщение оторжаео при переходе на данный узел
+	// 	Content DialogContent
+	// 	// Клавиатура
+	// 	Keyboard *tb.ReplyMarkup
+	// 	//
+	// }
 
 	// On reply button pressed (message)
 	b.Handle(&btnMainMenu, func(m *tb.Message) {
