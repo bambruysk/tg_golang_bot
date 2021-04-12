@@ -204,6 +204,7 @@ func main() {
 
 		case EnterPlayerName:
 			{
+				log.Println("Text handler state", "EnterPlayerName:")
 				playerName := m.Text
 				player, created := playerStorage.GetOrCreate(playerName)
 				if created {
@@ -222,6 +223,7 @@ func main() {
 	})
 
 	b.Handle(&calcHoldeButton, func(m *tb.Message) {
+		log.Println("calcHoldeButton", "EnterPlayerName:")
 		id := UserID(m.Sender.ID)
 		user, err := users.Get(id)
 		if err != nil {
@@ -239,13 +241,14 @@ func main() {
 	// })
 
 	b.Handle(&btnCalculator, func(m *tb.Message) {
+		log.Println("calcHoldeButton", "EnterPlayerName:")
 		id := UserID(m.Sender.ID)
 		user, err := users.Get(id)
 		if err != nil {
 			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
 			return
 		}
-		user.State = EnterPlayerName
+		user.SetState(EnterPlayerName)
 		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
