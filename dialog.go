@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"strconv"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -75,6 +74,7 @@ var (
 )
 
 var users UserStorager
+
 /*
 func TextHandler(m *tb.Message) {
 	user_id := UserID(m.Sender.ID)
@@ -123,9 +123,9 @@ func CreateDialog(bot *tb.Bot, enterPoint interface{}) {
 
 	   		*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
 	   	})
-	*/
-	// Setiings
-	/*
+*/
+// Setiings
+/*
 		*bot.Handle(&btnSettings, func(m *tb.Message) {
 
 			id := UserID(m.Sender.ID)
@@ -136,8 +136,8 @@ func CreateDialog(bot *tb.Bot, enterPoint interface{}) {
 
 			*bot.Send(m.Sender, start_dn.DialogContent.Message, start_dn.Keyboard)
 		})
-	*/
-}
+	}
+*/
 
 func CreateDeaultState() DialogState {
 	return IDLE

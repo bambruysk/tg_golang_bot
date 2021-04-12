@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"text/template"
@@ -89,6 +90,9 @@ type HoldeResponce struct {
 	Amount Money
 }
 
+func (hr *HoldeResponce) Show() string {
+	return fmt.Sprintf("Выдай этому игроку %v монет", hr.Amount)
+}
 
 // we not use decimal type for money. Money round to ceil, for players fun
 
@@ -214,15 +218,12 @@ func (h *Holde) Visit(dice int) Money {
 	return money * Money(dice/5) // D10
 }
 
-func (hs HoldeStorage) CalculateHoldes(req  HoldeRequest) (Money, error) {
-	
-
+func (hs HoldeStorage) CalculateHoldes(req HoldeRequest) (Money, error) {
 
 	// Get holdes from storage
 	money := Money(0)
-	
-	
-	for _, rh := range req.Holdes  {
+
+	for _, rh := range req.Holdes {
 		hold, err := hs.Get(rh.HoldeID)
 		if err != nil {
 			return 0, err
@@ -233,9 +234,9 @@ func (hs HoldeStorage) CalculateHoldes(req  HoldeRequest) (Money, error) {
 	}
 	//
 	holdeNums := make([]int, len(req.Holdes))
-	for i,rh := range req.Holdes {
+	for i, rh := range req.Holdes {
 		holdeNums[i] = rh.HoldeID
-	} 
+	}
 
 	clusters := calculateClusters(holdeNums)
 	for _, c := range clusters {

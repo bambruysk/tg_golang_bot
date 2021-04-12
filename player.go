@@ -11,36 +11,40 @@ type Player struct {
 	Name    string
 	Holdes  []*Holde
 	Request HoldeRequest
+	World   *HoldeStorage
 }
 
-func NewPlayer(name string) Player {
+func NewPlayer(name string, world *HoldeStorage) Player {
 	return Player{
 		Name:   name,
 		Holdes: []*Holde{},
+		World:  world,
 	}
 }
 
-
-func (p *  Player) HandleReq() HoldeResponce {
+func (p *Player) HandleReq() (HoldeResponce, error) {
 	if len(p.Request.Holdes) == 0 {
 		return HoldeResponce{
 			Amount: 0,
-		}
+		}, nil
 	}
-
-	
-
-
+	resp, err := p.World.CalculateHoldes(p.Request)
+	if err != nil {
+		return HoldeResponce{}, err
+	}
+	return HoldeResponce{
+		Amount: resp,
+	}, nil
 }
 
-
-// Player storage mpleneted as in mememory storage/  In futer it will db connection.
+// Player storage impleneted as in memory storage  In future it will db connection.
 type PlayerStorage struct {
 	Players map[string]Player
+	World   *HoldeStorage
 }
 
 // NewPlayerStorage conctructor
-func NewPlayerStorage(name string) PlayerStorage {
+func NewPlayerStorage(world *HoldeStorage) PlayerStorage {
 	return PlayerStorage{
 		Players: map[string]Player{},
 	}
@@ -57,7 +61,7 @@ func (ps *PlayerStorage) Add(player Player) {
 }
 
 func (ps *PlayerStorage) Create(name string) Player {
-	ps.Players[name] = NewPlayer(name)
+	ps.Players[name] = NewPlayer(name, ps.World)
 	return ps.Players[name]
 }
 

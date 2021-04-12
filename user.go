@@ -10,7 +10,7 @@ const (
 	UserSettings
 	MainMenu
 	HoldeCalc
-	AddHold
+	AddHolde
 	EnterDice
 	EnterPlayerName
 )

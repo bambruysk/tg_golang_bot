@@ -41,7 +41,7 @@ func main() {
 	// b.Start()
 
 	holdeStorage := NewHoldeStorage()
-	playerStorage := NewPlayerStorage()
+	playerStorage := NewPlayerStorage(&holdeStorage)
 
 	var (
 
@@ -50,8 +50,9 @@ func main() {
 		// кнопка вызова главного меню
 		btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
 		// Главное меню - Настройки | Считать
-		btnSettings   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Настройки")
-		btnCalculator = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Поместья")
+		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		btnSettings   = menuMain.Text("Настройки")
+		btnCalculator = menuMain.Text("Поместья")
 
 		// Настройки - Oпция 1 | Oпция 2 | Oпция 3
 		// Считать  -  Имя игрока - Добавить поместья - Снять кэш - Улучшить поместье.
@@ -59,21 +60,20 @@ func main() {
 		//								> ----^
 
 		// Universal markup builders.
-		menu     = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
-		selector = &tb.ReplyMarkup{}
+		// selector = &tb.ReplyMarkup{}
 
 		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-		addHoldeButton       = addHoldeMenuKeyboard.Text("Добавить поместье")
-		addHoldeCancelButton = addHoldeMenuKeyboard.Text("Нет, другое")
+		//addHoldeButton       = addHoldeMenuKeyboard.Text("Добавить поместье")
+		//addHoldeCancelButton = addHoldeMenuKeyboard.Text("Нет, другое")
 
 		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-		calcHoldeButton    = addNewHoldeMenuKeyboard.Text("Обсчитать поместья")
-		addHoldeMoreButton = addHoldeMenuKeyboard.Text("Добавить еще поместий")
+		calcHoldeButton = addNewHoldeMenuKeyboard.Text("Обсчитать поместья")
+		//addHoldeMoreButton = addHoldeMenuKeyboard.Text("Добавить еще поместий")
 
 		// Reply buttons.
-		btnHelp = menu.Text("ℹ Help")
+		//btnHelp = menu.Text("ℹ Help")
 		//	btnSettings = menu.Text("⚙ Settings")
 
 		// Inline buttons.
@@ -84,7 +84,7 @@ func main() {
 		// Make sure Unique stays unique as per button kind,
 		// as it has to be for callback routing to work.
 		//
-		btnPrev = selector.Data("⬅", "prev")
+		// btnPrev = selector.Data("⬅", "prev")
 		//		btnNext = selector.Data("➡", "next")
 	)
 
@@ -99,11 +99,11 @@ func main() {
 	// 	selector.Row(btnPrev, btnNext),
 	// )
 
-	UpdateUserState := func(id UserID, state DialogState) {
-		user, _ := users.Get(id)
-		user.SetState(MainMenu)
-		users.Update(id, user)
-	}
+	// UpdateUserState := func(id UserID, state DialogState) {
+	// 	user, _ := users.Get(id)
+	// 	user.SetState(MainMenu)
+	// 	users.Update(id, user)
+	// }
 
 	mainMenu := DialogNode{
 		Content: DialogContent{
@@ -115,6 +115,11 @@ func main() {
 	mainMenu.Keyboard.Reply(
 		mainMenu.Keyboard.Row(btnCalculator),
 		mainMenu.Keyboard.Row(btnSettings),
+	)
+
+	menuMain.Reply(
+		menuMain.Row(btnSettings),
+		menuMain.Row(btnCalculator),
 	)
 
 	// Command: /start <PAYLOAD>
@@ -134,7 +139,7 @@ func main() {
 		} else {
 			b.Send(m.Sender, fmt.Sprintf("с возвращением %s", m.Sender.FirstName))
 		}
-		b.Send(m.Sender, "Начнем", mainMenu)
+		b.Send(m.Sender, "Начнем", menuMain)
 	})
 
 	b.Handle(tb.OnText, func(m *tb.Message) {
@@ -145,6 +150,8 @@ func main() {
 			b.Send(m.Sender, "Сkучилась какая то ошибка. давай начнем заово. Жми /start")
 			return
 		}
+
+		log.Println("Text handler state", user.State)
 		switch user.State {
 		case IDLE:
 			{
@@ -175,7 +182,11 @@ func main() {
 
 		case EnterDice:
 			{
-				dice := strconv.Atoi(m.Text)
+				dice, err := strconv.Atoi(m.Text)
+				if err != nil {
+					b.Send(m.Sender, "Неправильынй бросок. Введите 1- 10")
+					return
+				}
 				if dice < 1 || dice > 10 {
 					b.Send(m.Sender, "Неправильынй бросок. Введеите 1- 10")
 					return
@@ -195,7 +206,13 @@ func main() {
 			{
 				playerName := m.Text
 				player, created := playerStorage.GetOrCreate(playerName)
+				if created {
+					b.Send(m.Sender, "Свежеме мясо!")
+				} else {
+					b.Send(m.Sender, "Знакомые всё лица!")
+				}
 				user.CurrPlayer = &player
+				user.State = AddHolde
 
 				b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
 				user.SetState(AddHolde)
@@ -204,18 +221,31 @@ func main() {
 
 	})
 
-	b.Handle(&calcHoldeButton, func (m * tb.Message) {
-		
-	}
-	// On reply button pressed (message)
-	b.Handle(&btnHelp, func(m *tb.Message) {
-		log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
-		log.Println("Message", m.Text)
-		b.Send(m.Sender, "Hello World!", selector)
+	b.Handle(&calcHoldeButton, func(m *tb.Message) {
+		id := UserID(m.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		resp, err := user.CurrPlayer.HandleReq()
+		b.Send(m.Sender, resp.Show())
 	})
+	// On reply button pressed (message)
+	// b.Handle(&btnHelp, func(m *tb.Message) {
+	// 	log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
+	// 	log.Println("Message", m.Text)
+	// 	b.Send(m.Sender, "Hello World!", selector)
+	// })
 
 	b.Handle(&btnCalculator, func(m *tb.Message) {
-		UpdateUserState(UserID(m.Sender.ID), HoldeCalc)
+		id := UserID(m.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		user.State = EnterPlayerName
 		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
