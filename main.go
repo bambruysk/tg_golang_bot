@@ -26,6 +26,8 @@ func main() {
 	}
 
 	log.Println("Bot started")
+	logger := NewBotLog(b)
+	logger.Log("Bot started!")
 
 	// b.Handle("/hello", func(m *tb.Message) {
 	// 	log.Println("Message", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
@@ -140,6 +142,9 @@ func main() {
 	b.Handle("/start", func(m *tb.Message) {
 		if !m.Private() {
 			return
+		} else {
+			logger.AddSubscriber(tb.ChatID(m.Chat.ID))
+			logger.Log("added new subscriber")
 		}
 		id := UserID(m.Sender.ID)
 		user, created := users.GetOrCreate(id)
@@ -312,7 +317,7 @@ func main() {
 		})
 	})
 	// calcHoldeButton
-	b.Handle(&calcHoldeButton,func ( c* tb.Callback) {
+	b.Handle(&calcHoldeButton, func(c *tb.Callback) {
 		id := UserID(c.Sender.ID)
 		user, err := users.Get(id)
 		if err != nil {
@@ -320,13 +325,13 @@ func main() {
 			return
 		}
 		user.SetState(HoldeCalc)
-		
+
 		resp, err := user.CurrPlayer.HandleReq()
 		if err != nil {
 			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
 			return
 		}
-		
+
 		users.Update(id, user)
 		b.Send(c.Sender, resp.Show())
 		b.Respond(c, &tb.CallbackResponse{

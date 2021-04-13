@@ -5,10 +5,26 @@ import (
 )
 
 type BotLog struct {
-	channels [] tb.Chat 
-	users [] tb.Message 
+	Chats []tb.ChatID
+	Bot   *tb.Bot
 }
 
-func (b * BotLog) AddSubscriber {
-	
+func NewBotLog(bot *tb.Bot) BotLog {
+	chats := make([]tb.ChatID, 1)
+	chats[0] = tb.ChatID(342270809)
+
+	return BotLog{
+		Chats: chats,
+		Bot:   bot,
+	}
+}
+
+func (b *BotLog) AddSubscriber(id tb.ChatID) {
+	b.Chats = append(b.Chats, id)
+}
+
+func (b *BotLog) Log(message string) {
+	for _, chat := range b.Chats {
+		b.Bot.Send(chat, message)
+	}
 }
