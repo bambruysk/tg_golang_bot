@@ -89,9 +89,6 @@ type HoldeResponce struct {
 	Amount Money
 }
 
-func (r *HoldeRequest) Calculate() HoldeResponce {
-
-}
 
 // we not use decimal type for money. Money round to ceil, for players fun
 
@@ -239,7 +236,7 @@ func (hs HoldeStorage) CalculateHoldes(req  HoldeRequest) (Money, error) {
 	for i,rh := range req.Holdes {
 		holdeNums[i] = rh.HoldeID
 	} 
-	
+
 	clusters := calculateClusters(holdeNums)
 	for _, c := range clusters {
 		if len(c) > 1 {
