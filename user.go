@@ -1,6 +1,9 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	tb "gopkg.in/tucnak/telebot.v2"
+)
 
 type DialogState int
 
@@ -35,6 +38,19 @@ func NewUser() User {
 
 func (u *User) Save() {
 	//TODO: add user  save
+}
+
+type UserRequest interface{}
+type UserResponce tb.Sendable 
+
+// Handle user request in one session
+func (u * User) Handle ( reqch chan UserRequest, rsp chan UserResponce )  {
+	req := <-reqch
+	switch req_type := req.(type) {
+	case tb.Message {
+		
+	}
+	}
 }
 
 /// Хранилище пользователей, потом заменим на BD
