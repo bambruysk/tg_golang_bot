@@ -217,19 +217,30 @@ func (h *Holde) Visit(dice int) Money {
 	return money * Money(dice/5) // D10
 }
 
-func (hs HoldeStorage) CalculateHoldes(holdes []int) (Money, error) {
+func (hs HoldeStorage) CalculateHoldes(req  HoldeRequest) (Money, error) {
+	
+
+
 	// Get holdes from storage
 	money := Money(0)
-	for _, h := range holdes {
-		hold, err := hs.Get(h)
+	
+	
+	for _, rh := range req.Holdes  {
+		hold, err := hs.Get(rh.HoldeID)
 		if err != nil {
 			return 0, err
 		}
+
 		// 4 random number ;)
-		money += hold.Visit(4)
+		money += hold.Visit(rh.Dice)
 	}
 	//
-	clusters := calculateClusters(holdes)
+	holdeNums := make([]int, len(req.Holdes))
+	for i,rh := range req.Holdes {
+		holdeNums[i] = rh.HoldeID
+	} 
+	
+	clusters := calculateClusters(holdeNums)
 	for _, c := range clusters {
 		if len(c) > 1 {
 			// add cluster bonus example

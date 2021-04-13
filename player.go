@@ -1,6 +1,6 @@
 package main
 
-type PLayerStorager interface {
+type PlayerStorager interface {
 	Get(name string) Player
 	Add(player Player)
 	Create(name string) Player
@@ -19,6 +19,20 @@ func NewPlayer(name string) Player {
 		Holdes: []*Holde{},
 	}
 }
+
+
+func (p *  Player) HandleReq() HoldeResponce {
+	if len(p.Request.Holdes) == 0 {
+		return HoldeResponce{
+			Amount: 0,
+		}
+	}
+
+	
+
+
+}
+
 
 // Player storage mpleneted as in mememory storage/  In futer it will db connection.
 type PlayerStorage struct {
