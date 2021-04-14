@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 type PlayerStorager interface {
 	Get(name string) Player
 	Add(player Player)
@@ -16,9 +18,10 @@ type Player struct {
 
 func NewPlayer(name string, world *HoldeStorage) Player {
 	return Player{
-		Name:   name,
-		Holdes: []*Holde{},
-		World:  world,
+		Name:    name,
+		Holdes:  []*Holde{},
+		Request: HoldeRequest{},
+		World:   world,
 	}
 }
 
@@ -28,7 +31,20 @@ func (p *Player) HandleReq() (HoldeResponce, error) {
 			Amount: 0,
 		}, nil
 	}
-	resp, err := p.World.CalculateHoldes(p.Request)
+	log.Println(p)
+	world := p.World
+	req := p.Request
+	resp, err := world.CalculateHoldes(req)
+	
+	for _, h := range req.Holdes {
+		holde, err := world.Get(h.HoldeID)
+		if err != nil {
+			panic(err)
+		}
+		holde.Owner = p.Name
+		holde.Amount = 0
+	}
+
 	if err != nil {
 		return HoldeResponce{}, err
 	}
@@ -43,10 +59,11 @@ type PlayerStorage struct {
 	World   *HoldeStorage
 }
 
-// NewPlayerStorage conctructor
+// NewPlayerStorage conctructors
 func NewPlayerStorage(world *HoldeStorage) PlayerStorage {
 	return PlayerStorage{
 		Players: map[string]Player{},
+		World:   world,
 	}
 }
 

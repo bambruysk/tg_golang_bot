@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"strconv"
 	"text/template"
 	"time"
@@ -126,6 +127,13 @@ func NewHoldeStorage() HoldeStorage {
 			LastVisit: init_time,
 		}
 	}
+
+	// for debug purpose only
+	r:= rand.Perm(HoldesNumber)
+	for i := 0; i < HoldesNumber; i++ {
+		holdes[i].Amount = Money(r[i])
+	}
+
 	return holdes
 }
 

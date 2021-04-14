@@ -92,6 +92,9 @@ func main() {
 	var users UserStorager
 	users = NewUsers()
 
+	log.Println(holdeStorage)
+	log.Println(playerStorage)
+	log.Println(users)
 	// menu.Reply(
 	// 	menu.Row(btnHelp),
 	// 	menu.Row(btnSettings),
@@ -211,7 +214,8 @@ func main() {
 				}
 
 				user.CurrPlayer.Request.Holdes = append(user.CurrPlayer.Request.Holdes, request)
-
+				playerStorage.Update(*user.CurrPlayer)
+				log.Println(user.CurrPlayer.Request)
 				b.Send(m.Sender, "Поместье добавлено! Хотите добавить еще? Введите номер поместья илли обсчитайте поместья", addNewHoldeMenuKeyboard)
 				user.SetState(AddHolde)
 			}
