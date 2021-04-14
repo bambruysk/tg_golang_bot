@@ -44,6 +44,7 @@ func (p *Player) HandleReq() (HoldeResponce, error) {
 		holde.Owner = p.Name
 		holde.Amount = 0
 	}
+	
 
 	if err != nil {
 		return HoldeResponce{}, err

@@ -217,7 +217,7 @@ func (h *Holde) Visit(dice int) Money {
 	//  time from last visit
 	hours := int(h.LastVisit.Sub(time.Now()).Hours())
 	// calculate money
-	money := Money(0)
+	money := h.Amount
 	for h := 0; h < hours; h++ {
 		money += Money(Settings.MoneyPerHour * (1 - float64(h)*Settings.TimeDegradation))
 	}
