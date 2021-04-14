@@ -49,7 +49,7 @@ func main() {
 		// Окно приветсвтия - регистрация  -
 
 		// кнопка вызова главного меню
-		btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
+		//btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
 		// Главное меню - Настройки | Считать
 		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 		btnSettings   = menuMain.Text("Настройки")
@@ -65,8 +65,9 @@ func main() {
 
 		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-		//addHoldeButton       = addHoldeMenuKeyboard.Text("Добавить поместье")
-		//addHoldeCancelButton = addHoldeMenuKeyboard.Text("Нет, другое")
+
+		addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить поместье","add_holde")
+		addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое","cancel_add_holde")
 
 		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
@@ -106,22 +107,28 @@ func main() {
 	// 	users.Update(id, user)
 	// }
 
-	mainMenu := DialogNode{
-		Content: DialogContent{
-			Message: "Выберите, что бы вы хотели сделать",
-			Media:   nil,
-		},
-		Keyboard: &tb.ReplyMarkup{},
-	}
-	mainMenu.Keyboard.Reply(
-		mainMenu.Keyboard.Row(btnCalculator),
-		mainMenu.Keyboard.Row(btnSettings),
-	)
+	// mainMenu := DialogNode{
+	// 	Content: DialogContent{
+	// 		Message: "Выберите, что бы вы хотели сделать",
+	// 		Media:   nil,
+	// 	},
+	// 	Keyboard: &tb.ReplyMarkup{},
+	// }
+	// mainMenu.Keyboard.Reply(
+	// 	mainMenu.Keyboard.Row(btnCalculator),
+	// 	mainMenu.Keyboard.Row(btnSettings),
+	// )
 
 	menuMain.Reply(
 		menuMain.Row(btnSettings),
 		menuMain.Row(btnCalculator),
 	)
+
+	addHoldeMenuKeyboard.Inline(
+		addHoldeMenuKeyboard.Row(addHoldeButton),
+		addHoldeMenuKeyboard.Row(addHoldeCancelButton),
+	) 
+
 
 	// Command: /start <PAYLOAD>
 	b.Handle("/start", func(m *tb.Message) {
@@ -282,13 +289,13 @@ func main() {
 	// }
 
 	// On reply button pressed (message)
-	b.Handle(&btnMainMenu, func(m *tb.Message) {
+	// b.Handle(&btnMainMenu, func(m *tb.Message) {
 
-		log.Println("main menu", m.Text)
+	// 	log.Println("main menu", m.Text)
 
-		b.Send(m.Sender, "Выберите, что бы вы хотели сделать", mainMenu)
+	// 	b.Send(m.Sender, "Выберите, что бы вы хотели сделать", mainMenu)
 
-	})
+	// })
 
 	b.Start()
 
