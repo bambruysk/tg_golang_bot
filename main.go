@@ -15,7 +15,7 @@ func main() {
 		// If field is empty it equals to "https://api.telegram.org".
 		URL: "https://api.telegram.org",
 
-	//	Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
+		//	Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
 		Token:  "1088448942:AAGbDckx7aVCoa005afOE2bVwVejgiPMS4c",
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
@@ -65,14 +65,13 @@ func main() {
 
 		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-
-		addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить поместье","add_holde")
-		addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое","cancel_add_holde")
+		addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить поместье", "add_holde")
+		addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое", "cancel_add_holde")
 
 		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 
-		calcHoldeButton = addNewHoldeMenuKeyboard.Text("Обсчитать поместья")
-		//addHoldeMoreButton = addHoldeMenuKeyboard.Text("Добавить еще поместий")
+		calcHoldeButton    = addNewHoldeMenuKeyboard.Data("Обсчитать поместья", "calc_all_holde")
+		addHoldeMoreButton = addNewHoldeMenuKeyboard.Data("Добавить еще поместий", "add_more_holde")
 
 		// Reply buttons.
 		//btnHelp = menu.Text("ℹ Help")
@@ -127,8 +126,12 @@ func main() {
 	addHoldeMenuKeyboard.Inline(
 		addHoldeMenuKeyboard.Row(addHoldeButton),
 		addHoldeMenuKeyboard.Row(addHoldeCancelButton),
-	) 
+	)
 
+	addNewHoldeMenuKeyboard.Inline(
+		addNewHoldeMenuKeyboard.Row(addHoldeMoreButton),
+		addNewHoldeMenuKeyboard.Row(calcHoldeButton),
+	)
 
 	// Command: /start <PAYLOAD>
 	b.Handle("/start", func(m *tb.Message) {
@@ -141,10 +144,10 @@ func main() {
 		users.Update(id, user)
 		//UpdateUserState(id,MainMenu)
 
-		//  Для нового пользовтеля отсылаемприветсвенное соообщение
+		//  Для нового пользовтеля отсылаем приветсвенное соообщение
 		if created {
 			//
-			b.Send(m.Sender, fmt.Sprintf("Рад с тобой познаокмиться %s. Я бот и я буду тебе помогать в экономике", m.Sender.FirstName))
+			b.Send(m.Sender, fmt.Sprintf("Рад с тобой познакомиться %s. Я бот и я буду тебе помогать в экономике", m.Sender.FirstName))
 		} else {
 			b.Send(m.Sender, fmt.Sprintf("с возвращением %s", m.Sender.FirstName))
 		}
@@ -156,7 +159,7 @@ func main() {
 
 		user, err := users.Get(id)
 		if err != nil {
-			b.Send(m.Sender, "Сkучилась какая то ошибка. давай начнем заово. Жми /start")
+			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заово. Жми /start")
 			return
 		}
 
@@ -169,23 +172,23 @@ func main() {
 			}
 		case AddHolde:
 			{
-				holde_id, err := strconv.Atoi(m.Text)
+				holdeID, err := strconv.Atoi(m.Text)
 				if err != nil {
 					b.Send(m.Sender, "Неправильынй ноvер поместья")
 					return
 				}
-				if holde_id < 0 || holde_id > HoldesNumber {
+				if holdeID < 0 || holdeID > HoldesNumber {
 					b.Send(m.Sender, "Неправильынй нмоер поместья")
 					return
 				}
-				holde, err := holdeStorage.Get(holde_id)
+				holde, err := holdeStorage.Get(holdeID)
 				if err != nil {
 					b.Send(m.Sender, "Неправильынй нмоер поместья")
 					return
 				}
-				user.CurrHolde = holde_id
+				user.CurrHolde = holdeID
 				user.Save()
-				users.Update(id, user)				
+				users.Update(id, user)
 
 				b.Send(m.Sender, holde.ResponseText(), addHoldeMenuKeyboard)
 
@@ -199,7 +202,7 @@ func main() {
 					return
 				}
 				if dice < 1 || dice > 10 {
-					b.Send(m.Sender, "Неправильынй бросок. Введеите 1- 10")
+					b.Send(m.Sender, "Неправильынй бросок. Введите 1- 10")
 					return
 				}
 				request := HoldeRequestItem{
@@ -219,7 +222,7 @@ func main() {
 				playerName := m.Text
 				player, created := playerStorage.GetOrCreate(playerName)
 				if created {
-					b.Send(m.Sender, "Свежеме мясо!")
+					b.Send(m.Sender, "Свежее мясо!")
 				} else {
 					b.Send(m.Sender, "Знакомые всё лица!")
 				}
@@ -230,7 +233,7 @@ func main() {
 				user.SetState(AddHolde)
 			}
 		}
-		users.Update(id, user)	
+		users.Update(id, user)
 
 	})
 
@@ -243,15 +246,14 @@ func main() {
 			return
 		}
 		resp, err := user.CurrPlayer.HandleReq()
-		users.Update(id, user)	
+		users.Update(id, user)
 		b.Send(m.Sender, resp.Show())
-
 
 	})
 	// On reply button pressed (message)
 	// b.Handle(&btnHelp, func(m *tb.Message) {
 	// 	log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
-	// 	log.Println("Message", m.Text) 
+	// 	log.Println("Message", m.Text)
 	// 	b.Send(m.Sender, "Hello World!", selector)
 	// })
 
@@ -264,11 +266,71 @@ func main() {
 			return
 		}
 		user.SetState(EnterPlayerName)
-		users.Update(id, user)	
+		users.Update(id, user)
 
 		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
+	b.Handle(&addHoldeButton, func(c *tb.Callback) {
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+
+		user.SetState(EnterDice)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Попроси игрока бросить кубик d10")
+		b.Respond(c, &tb.CallbackResponse{
+
+			Text:      "Поместье добавлено",
+			ShowAlert: false,
+		})
+	})
+
+	b.Handle(&addHoldeMoreButton, func(c *tb.Callback) {
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+
+		user.SetState(AddHolde)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Введи номер поместья")
+		b.Respond(c, &tb.CallbackResponse{
+			Text:      "Еще поместий",
+			ShowAlert: false,
+		})
+	})
+	// calcHoldeButton
+	b.Handle(&calcHoldeButton,func ( c* tb.Callback) {
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		user.SetState(HoldeCalc)
+		
+		resp, err := user.CurrPlayer.HandleReq()
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		
+		users.Update(id, user)
+		b.Send(c.Sender, resp.Show())
+		b.Respond(c, &tb.CallbackResponse{
+			Text:      "Еще поместий",
+			ShowAlert: false,
+		})
+
+	})
 	// Send hand
 
 	// // On inline button pressed (callback)
