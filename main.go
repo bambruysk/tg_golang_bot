@@ -15,7 +15,8 @@ func main() {
 		// If field is empty it equals to "https://api.telegram.org".
 		URL: "https://api.telegram.org",
 
-		Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
+	//	Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
+		Token:  "1088448942:AAGbDckx7aVCoa005afOE2bVwVejgiPMS4c",
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 
@@ -131,6 +132,7 @@ func main() {
 		user, created := users.GetOrCreate(id)
 		user.SetState(MainMenu)
 		users.Update(id, user)
+		//UpdateUserState(id,MainMenu)
 
 		//  Для нового пользовтеля отсылаемприветсвенное соообщение
 		if created {
@@ -176,6 +178,8 @@ func main() {
 				}
 				user.CurrHolde = holde_id
 				user.Save()
+				users.Update(id, user)				
+
 				b.Send(m.Sender, holde.ResponseText(), addHoldeMenuKeyboard)
 
 			}
@@ -219,6 +223,7 @@ func main() {
 				user.SetState(AddHolde)
 			}
 		}
+		users.Update(id, user)	
 
 	})
 
@@ -231,12 +236,15 @@ func main() {
 			return
 		}
 		resp, err := user.CurrPlayer.HandleReq()
+		users.Update(id, user)	
 		b.Send(m.Sender, resp.Show())
+
+
 	})
 	// On reply button pressed (message)
 	// b.Handle(&btnHelp, func(m *tb.Message) {
 	// 	log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
-	// 	log.Println("Message", m.Text)
+	// 	log.Println("Message", m.Text) 
 	// 	b.Send(m.Sender, "Hello World!", selector)
 	// })
 
@@ -249,6 +257,8 @@ func main() {
 			return
 		}
 		user.SetState(EnterPlayerName)
+		users.Update(id, user)	
+
 		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
