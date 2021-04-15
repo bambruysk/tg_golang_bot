@@ -409,9 +409,14 @@ func main() {
 	buttons := [] tb.Row{}
 	for i,loc:= range  gameSettings.Locations {
 	locSelectKbd :=  &tb.ReplyMarkup{ResizeReplyKeyboard: true}
-		buttons = append(buttons,locSelectKbd.Row( locSelectKbd.Data(loc,"loc_sel_"+strconv.Itoa(i))))
+		button:=  locSelectKbd.Data(loc,"loc_sel_"+strconv.Itoa(i))
+		b.Handle(&button,func (c* tb.Callback){
+			
+		})
+		buttons = append(buttons,locSelectKbd.Row(button))
 	}
 	locSelectKbd.Inline(buttons...)
+
 
 	b.Handle(&changeUserLocButton, func (c *tb.Callback ){
 		id := UserID(c.Sender.ID)
