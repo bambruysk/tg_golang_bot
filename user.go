@@ -13,6 +13,9 @@ const (
 	AddHolde
 	EnterDice
 	EnterPlayerName
+	EnterUserName
+	EnterUserLoc
+	
 )
 
 // Пользователь
@@ -20,6 +23,8 @@ type User struct {
 	State      DialogState
 	CurrHolde  int
 	CurrPlayer *Player
+	Name       string
+	Location   string
 }
 
 func (u *User) SetState(state DialogState) {

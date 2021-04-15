@@ -46,6 +46,10 @@ func main() {
 	holdeStorage := NewHoldeStorage()
 	playerStorage := NewPlayerStorage(&holdeStorage)
 
+	gspread := NewGspreadHoldes()
+
+	gameSettings := gspread.ReadSettings()
+	
 	var (
 
 		// Окно приветсвтия - регистрация  -
@@ -74,6 +78,11 @@ func main() {
 
 		calcHoldeButton    = addNewHoldeMenuKeyboard.Data("Обсчитать поместья", "calc_all_holde")
 		addHoldeMoreButton = addNewHoldeMenuKeyboard.Data("Добавить еще поместий", "add_more_holde")
+
+		menuSettingsKbd = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		changeUsernameButton   = menuSettingsKbd.Data("Изменить имя", "change_user_name")
+		changeUserLocButton = menuSettingsKbd.Data("Изменить локацию", "change_user_loc")
+		backToMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Data("В главное меню", "back_main_menu")
 
 		// Reply buttons.
 		//btnHelp = menu.Text("ℹ Help")
@@ -123,7 +132,7 @@ func main() {
 	// 	mainMenu.Keyboard.Row(btnSettings),
 	// )
 
-	menuMain.Reply(
+	menuMain.Inline(
 		menuMain.Row(btnSettings),
 		menuMain.Row(btnCalculator),
 	)
@@ -137,6 +146,13 @@ func main() {
 		addNewHoldeMenuKeyboard.Row(addHoldeMoreButton),
 		addNewHoldeMenuKeyboard.Row(calcHoldeButton),
 	)
+
+	menuSettingsKbd.Inline(
+		menuSettingsKbd.Row(changeUsernameButton),
+		menuSettingsKbd.Row(changeUserLocButton),
+		menuSettingsKbd.Row(backToMainMenu),
+	)
+
 
 	// Command: /start <PAYLOAD>
 	b.Handle("/start", func(m *tb.Message) {
@@ -241,6 +257,17 @@ func main() {
 				b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
 				user.SetState(AddHolde)
 			}
+		
+		case EnterUserName:
+			{
+				log.Println("Text handler state", "EnterUserName:")
+				user.Name = m.Text
+			
+				user.State = UserSettings
+				b.Send(m.Sender, "Приятно познакомиться, " + user.Name)
+				b.Send(m.Sender, "Твой профиль в игре \n Имя" + user.Name + "\n Локация: "+ user.Location + "\nыбери, что изменить? ", menuSettingsKbd)
+				user.SetState(AddHolde)
+			}
 		}
 		users.Update(id, user)
 
@@ -340,6 +367,81 @@ func main() {
 		})
 
 	})
+
+	b.Handle(&btnSettings, func (c *tb.Callback ){
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		user.SetState(UserSettings)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Твой профиль в игре \n Имя" + user.Name + "\n Локация: "+ user.Location + "\nыбери, что изменить? ", menuSettingsKbd)
+
+		b.Respond(c, &tb.CallbackResponse{
+			Text:      "",
+			ShowAlert: false,
+		})
+	})
+
+	b.Handle(&changeUsernameButton, func (c *tb.Callback ){
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		user.SetState(EnterUserName)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Введи свое имя")
+
+		b.Respond(c, &tb.CallbackResponse{
+			Text:      "",
+			ShowAlert: false,
+		})
+	})		
+
+	//-----------
+	locSelectKbd :=  &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+	buttons := [] tb.Row{}
+	for i,loc:= range  gameSettings.Locations {
+	locSelectKbd :=  &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		buttons = append(buttons,locSelectKbd.Row( locSelectKbd.Data(loc,"loc_sel_"+strconv.Itoa(i))))
+	}
+	locSelectKbd.Inline(buttons...)
+
+	b.Handle(&changeUserLocButton, func (c *tb.Callback ){
+		id := UserID(c.Sender.ID)
+		user, err := users.Get(id)
+		if err != nil {
+			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			return
+		}
+		user.SetState(EnterUserLoc)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Выбери локацию")
+
+
+
+
+
+		// add 
+
+
+
+
+		b.Respond(c, &tb.CallbackResponse{
+			Text:      "",
+			ShowAlert: false,
+		})
+	})
+
+
+	
 	// Send hand
 
 	// // On inline button pressed (callback)

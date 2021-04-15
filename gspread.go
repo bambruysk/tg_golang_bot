@@ -51,6 +51,11 @@ func (gs * GspreadHoldes) ReadSettings () HoldeGameSettings {
 		case "WorldSizeY" : settings.WorldSizeY, err = strconv.Atoi(val)
 		case "MoneyPerHour" : settings.MoneyPerHour, err = strconv.ParseFloat(val,64)
 		case "TimeDegradation" : settings.TimeDegradation, err = strconv.ParseFloat(val,64)
+		case "Locations" : {
+			for i:= 1; i < len(row); i++ {
+				settings.Locations = append(settings.Locations, row[i].Value)
+			} 
+		}
 		
 		} 
 		if err !=  nil {

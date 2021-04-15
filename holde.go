@@ -36,6 +36,8 @@ type HoldeGameSettings struct {
 	SynergyCoeff float64
 	// Time degradation coeffs
 	TimeDegradation float64
+	// Locations
+	Locations [] string
 }
 
 // Holde - basic structures  for holde
