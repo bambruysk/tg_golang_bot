@@ -24,12 +24,16 @@ func (m Money) String() string {
 }
 
 type HoldeGameSettings struct {
+	// HoldeNums 
+	HoldeNums int
+	// Размер мира по горизонтали
+	WorldSizeX int
+	// Размер мира по вертикали
+	WorldSizeY int
 	// Базовый доход на уровень в час
 	MoneyPerHour float64
-
 	// Коэфифициент синергии
 	SynergyCoeff float64
-
 	// Time degradation coeffs
 	TimeDegradation float64
 }
