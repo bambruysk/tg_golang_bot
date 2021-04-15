@@ -18,3 +18,13 @@ func TestReadSettings ( t * testing.T) {
 	t.Fail()
 
 }
+
+//ReadHoldes
+
+func TestReadHoldes ( t * testing.T) {
+	spread :=  NewGspreadHoldes()
+	holdes := spread.ReadHoldes()
+	t.Log(holdes)
+	t.Fail()
+
+}

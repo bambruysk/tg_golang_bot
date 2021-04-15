@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"strconv"
+	"time"
 
 	"gopkg.in/Iwark/spreadsheet.v2"
 )
@@ -62,5 +64,35 @@ func (gs * GspreadHoldes) ReadSettings () HoldeGameSettings {
 
 
 func ( gs *  GspreadHoldes) ReadHoldes ()  []Holde {
-	return []Holde{}
+	spread, err := gs.service.FetchSpreadsheet(gs.spreadsheetName)
+	if err !=  nil {
+		panic(err)
+	}
+	sheet, err := spread.SheetByTitle("Holdes")
+	if err !=  nil {
+		panic(err)
+	}
+	var result [] Holde 
+	// skip first row as header
+	for i:= 1; i < len(sheet.Rows); i++ {
+		row := sheet.Rows[i]
+		id, err := strconv.Atoi( row[0].Value)
+		if err != nil {
+			log.Println("Wrong id in ", i)
+			continue
+		}
+		name := row[1].Value
+		result = append(result, Holde{
+			Name:      name,
+			ID:        id,
+			Amount:    0,
+			Level:     1,
+			Owner:     "",
+			LastVisit: time.Time{},
+		})
+
+	} 
+	
+	
+	return result
 }
