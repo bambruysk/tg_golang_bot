@@ -46,9 +46,18 @@ func main() {
 	holdeStorage := NewHoldeStorage()
 	playerStorage := NewPlayerStorage(&holdeStorage)
 
-	gspread := NewGspreadHoldes()
+	//gspread := NewGspreadHoldes()
 
-	gameSettings := gspread.ReadSettings()
+	//	gameSettings := gspread.ReadSettings()
+	gameSettings := HoldeGameSettings{
+		HoldeNums:       100,
+		WorldSizeX:      10,
+		WorldSizeY:      10,
+		MoneyPerHour:    2,
+		SynergyCoeff:    2,
+		TimeDegradation: 2,
+		Locations:       []string{"Dump", "Numb", "Delta"},
+	}
 
 	var (
 
@@ -57,7 +66,15 @@ func main() {
 		// кнопка вызова главного меню
 		//btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
 		// Главное меню - Настройки | Считать
-		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		menuMain = &tb.ReplyMarkup{
+			InlineKeyboard:      [][]tb.InlineButton{},
+			ReplyKeyboard:       [][]tb.ReplyButton{},
+			ForceReply:          false,
+			ResizeReplyKeyboard: true,
+			OneTimeKeyboard:     true,
+			ReplyKeyboardRemove: true,
+			Selective:           false,
+		}
 		btnSettings   = menuMain.Data("Настройки", "settings")
 		btnCalculator = menuMain.Data("Поместья", "holdes")
 
@@ -174,7 +191,12 @@ func main() {
 		} else {
 			b.Send(m.Sender, fmt.Sprintf("с возвращением %s", m.Sender.FirstName))
 		}
-		b.Send(m.Sender, "Начнем", menuMain)
+		user.LastMessage, err = b.Send(m.Sender, "Начнем", menuMain)
+		if err != nil {
+			log.Println("Problem with send message")
+		}
+
+		users.Update(id, user)
 	})
 
 	b.Handle(tb.OnText, func(m *tb.Message) {
@@ -213,8 +235,10 @@ func main() {
 				user.Save()
 				users.Update(id, user)
 
-				b.Send(m.Sender, holde.ResponseText(), addHoldeMenuKeyboard)
-
+				user.LastMessage, err = b.Send(m.Sender, holde.ResponseText(), addHoldeMenuKeyboard)
+				if err != nil {
+					log.Println("Problem with send message")
+				}
 			}
 
 		case EnterDice:
@@ -236,7 +260,10 @@ func main() {
 				user.CurrPlayer.Request.Holdes = append(user.CurrPlayer.Request.Holdes, request)
 				playerStorage.Update(*user.CurrPlayer)
 				log.Println(user.CurrPlayer.Request)
-				b.Send(m.Sender, "Поместье добавлено! Хотите добавить еще? Введите номер поместья илли обсчитайте поместья", addNewHoldeMenuKeyboard)
+				user.LastMessage, err = b.Send(m.Sender, "Поместье добавлено! Хотите добавить еще? Введите номер поместья илли обсчитайте поместья", addNewHoldeMenuKeyboard)
+				if err != nil {
+					log.Println("Problem with send message")
+				}
 				user.SetState(AddHolde)
 			}
 
@@ -253,7 +280,10 @@ func main() {
 				user.CurrPlayer = &player
 				user.State = AddHolde
 
-				b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
+				user.LastMessage, err = b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
+				if err != nil {
+					log.Println("Problem with send message")
+				}
 				user.SetState(AddHolde)
 			}
 
@@ -264,7 +294,10 @@ func main() {
 
 				user.State = UserSettings
 				b.Send(m.Sender, "Приятно познакомиться, "+user.Name)
-				b.Send(m.Sender, "Твой профиль в игре \n Имя"+user.Name+"\n Локация: "+user.Location+"\nыбери, что изменить? ", menuSettingsKbd)
+				user.LastMessage, err = b.Send(m.Sender, "Твой профиль в игре \n Имя"+user.Name+"\n Локация: "+user.Location+"\nыбери, что изменить? ", menuSettingsKbd)
+				if err != nil {
+					log.Println("Problem with send message")
+				}
 				user.SetState(AddHolde)
 			}
 		}
@@ -273,7 +306,7 @@ func main() {
 	})
 
 	b.Handle(&calcHoldeButton, func(m *tb.Message) {
-		log.Println("calcHoldeButton", "EnterPlayerName:")
+		log.Println("calcHoldeButton")
 		id := UserID(m.Sender.ID)
 		user, err := users.Get(id)
 		if err != nil {
@@ -281,9 +314,15 @@ func main() {
 			return
 		}
 		resp, err := user.CurrPlayer.HandleReq()
-		users.Update(id, user)
-		b.Send(m.Sender, resp.Show())
+		if user.LastMessage != nil {
+			b.Delete(user.LastMessage)
+		}
+		user.LastMessage, err = b.Send(m.Sender, resp.Show())
+		if err != nil {
+			log.Println("Problem with send message")
+		}
 
+		users.Update(id, user)
 	})
 	// On reply button pressed (message)
 	// b.Handle(&btnHelp, func(m *tb.Message) {
@@ -301,9 +340,15 @@ func main() {
 			return
 		}
 		user.SetState(EnterPlayerName)
+
+		user.LastMessage, err = b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
+		if err != nil {
+			log.Println("Problem with send message")
+		}
+
 		users.Update(id, user)
 
-		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
+
 	})
 
 	b.Handle(&addHoldeButton, func(c *tb.Callback) {
@@ -358,12 +403,13 @@ func main() {
 			return
 		}
 
-		users.Update(id, user)
+
 		b.Send(c.Sender, resp.Show())
 		b.Respond(c, &tb.CallbackResponse{
 			Text:      "Еще поместий",
 			ShowAlert: false,
 		})
+		users.Update(id, user)
 
 	})
 
@@ -375,7 +421,8 @@ func main() {
 			return
 		}
 		user.SetState(UserSettings)
-		users.Update(id, user)
+	
+		b.Delete(user.LastMessage)
 
 		b.Send(c.Sender, "Твой профиль в игре \n Имя"+user.Name+"\n Локация: "+user.Location+"\nыбери, что изменить? ", menuSettingsKbd)
 
@@ -383,6 +430,7 @@ func main() {
 			Text:      "Настройки",
 			ShowAlert: false,
 		})
+		users.Update(id, user)
 	})
 
 	b.Handle(&changeUsernameButton, func(c *tb.Callback) {
@@ -426,7 +474,7 @@ func main() {
 
 	}
 	locationSelectButtonsRows := make([]tb.Row, locationNum)
-	for i, _ := range locationSelectButtons {
+	for i := range locationSelectButtons {
 		locationSelectButtonsRows[i] = locSelectKbd.Row(locationSelectButtons[i])
 	}
 

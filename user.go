@@ -1,7 +1,9 @@
 package main
 
-import "errors"
-
+import ( 
+	"errors"
+	tb "gopkg.in/tucnak/telebot.v2"
+)
 type DialogState int
 
 const (
@@ -21,6 +23,7 @@ const (
 // Пользователь
 type User struct {
 	State      DialogState
+	LastMessage * tb.Message
 	CurrHolde  int
 	CurrPlayer *Player
 	Name       string
