@@ -15,7 +15,6 @@ const (
 	EnterPlayerName
 	EnterUserName
 	EnterUserLoc
-	
 )
 
 // Пользователь
@@ -40,6 +39,10 @@ func NewUser() User {
 
 func (u *User) Save() {
 	//TODO: add user  save
+}
+
+func (u User) ShowProfile() string {
+	return " Твой профиль в игре: \n Имя :\t" + u.Name + "\n Локация: \t" + u.Location + "\n Выбери, что изменить? "
 }
 
 /// Хранилище пользователей, потом заменим на BD

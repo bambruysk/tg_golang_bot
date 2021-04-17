@@ -57,7 +57,7 @@ func main() {
 		// кнопка вызова главного меню
 		//btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
 		// Главное меню - Настройки | Считать
-		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 		btnSettings   = menuMain.Data("Настройки", "settings")
 		btnCalculator = menuMain.Data("Поместья", "holdes")
 
@@ -69,20 +69,20 @@ func main() {
 		// Universal markup builders.
 		// selector = &tb.ReplyMarkup{}
 
-		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 
 		addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить поместье", "add_holde")
 		addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое", "cancel_add_holde")
 
-		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 
 		calcHoldeButton    = addNewHoldeMenuKeyboard.Data("Обсчитать поместья", "calc_all_holde")
 		addHoldeMoreButton = addNewHoldeMenuKeyboard.Data("Добавить еще поместий", "add_more_holde")
 
-		menuSettingsKbd      = &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+		menuSettingsKbd      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 		changeUsernameButton = menuSettingsKbd.Data("Изменить имя", "change_user_name")
 		changeUserLocButton  = menuSettingsKbd.Data("Изменить локацию", "change_user_loc")
-		backToMainMenu       = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Data("В главное меню", "back_main_menu")
+		backToMainMenuButton = (&tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}).Data("В главное меню", "back_main_menu")
 
 		// Reply buttons.
 		//btnHelp = menu.Text("ℹ Help")
@@ -150,7 +150,7 @@ func main() {
 	menuSettingsKbd.Inline(
 		menuSettingsKbd.Row(changeUsernameButton),
 		menuSettingsKbd.Row(changeUserLocButton),
-		menuSettingsKbd.Row(backToMainMenu),
+		menuSettingsKbd.Row(backToMainMenuButton),
 	)
 
 	// Command: /start <PAYLOAD>
@@ -197,16 +197,16 @@ func main() {
 			{
 				holdeID, err := strconv.Atoi(m.Text)
 				if err != nil {
-					b.Send(m.Sender, "Неправильынй ноvер поместья")
+					b.Send(m.Sender, "Неправильынй номер поместья")
 					return
 				}
 				if holdeID < 0 || holdeID > HoldesNumber {
-					b.Send(m.Sender, "Неправильынй нмоер поместья")
+					b.Send(m.Sender, "Неправильынй номер поместья")
 					return
 				}
 				holde, err := holdeStorage.Get(holdeID)
 				if err != nil {
-					b.Send(m.Sender, "Неправильынй нмоер поместья")
+					b.Send(m.Sender, "Неправильынй номер поместья")
 					return
 				}
 				user.CurrHolde = holdeID
@@ -292,44 +292,36 @@ func main() {
 	// 	b.Send(m.Sender, "Hello World!", selector)
 	// })
 
-	b.Handle(&btnCalculator, func(m *tb.Message) {
+	b.Handle(&btnCalculator, func(c *tb.Callback) {
 		log.Println("calcHoldeButton", "EnterPlayerName:")
-		id := UserID(m.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 		user.SetState(EnterPlayerName)
 		users.Update(id, user)
 
-		b.Send(m.Sender, "Сообщи, пожалуйста, мне имя игрока")
+		b.Send(c.Sender, "Сообщи, пожалуйста, мне имя игрока")
 	})
 
 	b.Handle(&addHoldeButton, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
-
 		user.SetState(EnterDice)
 		users.Update(id, user)
 
 		b.Send(c.Sender, "Попроси игрока бросить кубик d10")
 		b.Respond(c, &tb.CallbackResponse{
 
-			Text:      "Поместье добавлено",
-			ShowAlert: false,
+			Text: "Поместье добавлено",
 		})
 	})
 
 	b.Handle(&addHoldeMoreButton, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 
@@ -338,16 +330,13 @@ func main() {
 
 		b.Send(c.Sender, "Введи номер поместья")
 		b.Respond(c, &tb.CallbackResponse{
-			Text:      "Еще поместий",
-			ShowAlert: false,
+			Text: "Еще поместий",
 		})
 	})
 	// calcHoldeButton
 	b.Handle(&calcHoldeButton, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 		user.SetState(HoldeCalc)
@@ -361,35 +350,29 @@ func main() {
 		users.Update(id, user)
 		b.Send(c.Sender, resp.Show())
 		b.Respond(c, &tb.CallbackResponse{
-			Text:      "Еще поместий",
-			ShowAlert: false,
+			Text: "Еще поместий",
 		})
 
 	})
 
 	b.Handle(&btnSettings, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 		user.SetState(UserSettings)
 		users.Update(id, user)
 
-		b.Send(c.Sender, "Твой профиль в игре \n Имя"+user.Name+"\n Локация: "+user.Location+"\nыбери, что изменить? ", menuSettingsKbd)
+		b.Send(c.Sender, user.ShowProfile(), menuSettingsKbd)
 
 		b.Respond(c, &tb.CallbackResponse{
-			Text:      "Настройки",
-			ShowAlert: false,
+			Text: "Настройки",
 		})
 	})
 
 	b.Handle(&changeUsernameButton, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 		user.SetState(EnterUserName)
@@ -398,30 +381,26 @@ func main() {
 		b.Send(c.Sender, "Введи свое имя")
 
 		b.Respond(c, &tb.CallbackResponse{
-			Text:      "",
-			ShowAlert: false,
+			Text: "",
 		})
 	})
 
 	//-----------
-	locSelectKbd := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+	locSelectKbd := &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 	locationNum := len(gameSettings.Locations)
 	locationSelectButtons := make([]tb.Btn, locationNum)
 	for i, loc := range gameSettings.Locations {
 		locationSelectButtons[i] = locSelectKbd.Data(loc, "loc_sel_"+strconv.Itoa(i), loc)
 		b.Handle(&locationSelectButtons[i], func(c *tb.Callback) {
-			id := UserID(c.Sender.ID)
-			user, err := users.Get(id)
-			if err != nil {
-				b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+			id, user, notFound := GetUserFromCallbackByID(c, users, b)
+			if notFound {
 				return
 			}
-
 			user.Location = c.Data // i m not sure what this is correct
 			log.Println(*c, c.Data)
 			user.SetState(UserSettings)
 			users.Update(id, user)
-			b.Send(c.Sender, "Твой профиль в игре \n Имя"+user.Name+"\n Локация: "+user.Location+"\nыбери, что изменить? ", menuSettingsKbd)
+			b.Send(c.Sender, "Твой профиль в игре \nИмя: \t"+user.Name+"\n Локация: \t"+user.Location+"\n Выбери, что изменить? ", menuSettingsKbd)
 		})
 
 	}
@@ -433,10 +412,8 @@ func main() {
 	locSelectKbd.Inline(locationSelectButtonsRows...)
 
 	b.Handle(&changeUserLocButton, func(c *tb.Callback) {
-		id := UserID(c.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
 			return
 		}
 		user.SetState(EnterUserLoc)
@@ -447,9 +424,20 @@ func main() {
 		// add
 
 		b.Respond(c, &tb.CallbackResponse{
-			Text:      "",
-			ShowAlert: false,
+			Text: "",
 		})
+	})
+
+	b.Handle(&backToMainMenuButton, func(c *tb.Callback) {
+		id, user, notFound := GetUserFromCallbackByID(c, users, b)
+		if notFound {
+			return
+		}
+		user.SetState(MainMenu)
+		users.Update(id, user)
+
+		b.Send(c.Sender, "Выбери действие", menuMain)
+
 	})
 
 	// Send hand
@@ -482,4 +470,14 @@ func main() {
 
 	b.Start()
 
+}
+
+func GetUserFromCallbackByID(c *tb.Callback, users UserStorager, b *tb.Bot) (UserID, User, bool) {
+	id := UserID(c.Sender.ID)
+	user, err := users.Get(id)
+	if err != nil {
+		b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
+		return 0, User{}, true
+	}
+	return id, user, false
 }
