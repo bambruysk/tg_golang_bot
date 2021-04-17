@@ -10,6 +10,16 @@ import (
 )
 
 func main() {
+
+	err := ConnectDB()
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+
+
 	b, err := tb.NewBot(tb.Settings{
 		// You can also set custom API URL.
 		// If field is empty it equals to "https://api.telegram.org".
