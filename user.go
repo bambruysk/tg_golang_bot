@@ -20,6 +20,7 @@ const (
 // Пользователь
 type User struct {
 	State      DialogState
+	ChatID     int
 	CurrHolde  int
 	CurrPlayer *Player
 	Name       string

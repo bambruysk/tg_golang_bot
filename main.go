@@ -3,20 +3,28 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	b, err := tb.NewBot(tb.Settings{
 		// You can also set custom API URL.
 		// If field is empty it equals to "https://api.telegram.org".
 		URL: "https://api.telegram.org",
 
 		//	Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
-		Token:  "1088448942:AAGbDckx7aVCoa005afOE2bVwVejgiPMS4c",
+		Token:  os.Getenv("TG_API_KEY"),
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 
@@ -360,6 +368,7 @@ func main() {
 		if notFound {
 			return
 		}
+
 		user.SetState(UserSettings)
 		users.Update(id, user)
 
@@ -481,3 +490,10 @@ func GetUserFromCallbackByID(c *tb.Callback, users UserStorager, b *tb.Bot) (Use
 	}
 	return id, user, false
 }
+
+// func initConfig() error {
+// 	viper.AddConfigPath("configs")
+// 	viper.SetConfigName("config.yml")
+
+// 	return viper.ReadConfig()
+// }
