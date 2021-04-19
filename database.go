@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/jackc/pgx/v4"
@@ -82,23 +83,52 @@ func (u *User) CreateDB(conn *pgx.Conn) error {
 		`insert into users(name, chat_id, location) 
 		values($1, $2, (select id from location where name=$3))  
 		on conflict (chat_d) 
-		do update set name=$1 ,location=$3 `,
+		do update set name=$1 ,location=(select id from location where name=$3) `,
 		u.Name, u.ChatID, u.Location)
 	return err
 }
 
 func (u *User) UpdateDB(conn *pgx.Conn) error {
+
+	_, err := conn.Exec(context.Background(),
+		"update set name=$1 ,location=(select id from location where name=$3) where chat_id=$2",
+		u.Name, u.ChatID, u.Location)
+	if err != nil {
+		log.Fatalf(" update to user faild %v", err)
+	}
+
+	return nil
+}
+
+func (u *User) ReadDB(conn *pgx.Conn) error {
+
+	rows, err := conn.Query(context.Background(),
+		"select * from (select users.name, chat_id, location.name from users join location where users.location = location.id) where chat_id=$1", u.ChatID)
+	if err != nil {
+		log.Fatalf(" update to user read %v", err)
+	}
+	rows.Scan(u.Name, u.ChatID, u.Location)
+
 	return nil
 }
 
 func (l *Location) AddDB(conn *pgx.Conn) error {
-	_, err := conn.Exec(context.Background(), "insert into users(name) values($1)", l.Name)
+	_, err := conn.Exec(context.Background(), "insert into location(name) values($1) on conflict do nothing", l.Name)
 	return err
 }
 
-func (l *Location) ReadDB(conn *pgx.Conn) error {
-	_, err := conn.Exec(context.Background(), "select *  into users(name) values($1)", l.Name)
-	return err
+func LocationsReadFromDB(conn *pgx.Conn) ([]Location, error) {
+	rows, err := conn.Query(context.Background(), "select name  from location ")
+
+	locs := []Location{}
+
+	for rows.Next() {
+		var loc Location
+		rows.Scan(&loc.Name)
+		locs = append(locs, loc)
+	}
+
+	return locs, err
 }
 
 func (l *Location) DeleteDB(conn *pgx.Conn) error {
