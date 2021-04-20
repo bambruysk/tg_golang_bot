@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -82,7 +83,7 @@ func (u *User) CreateDB(conn *pgx.Conn) error {
 	_, err := conn.Exec(context.Background(),
 		`insert into users(name, chat_id, location) 
 		values($1, $2, (select id from location where name=$3))  
-		on conflict (chat_d) 
+		on conflict (chat_id) 
 		do update set name=$1 ,location=(select id from location where name=$3) `,
 		u.Name, u.ChatID, u.Location)
 	return err
@@ -103,9 +104,12 @@ func (u *User) UpdateDB(conn *pgx.Conn) error {
 func (u *User) ReadDB(conn *pgx.Conn) error {
 
 	rows, err := conn.Query(context.Background(),
-		"select * from (select users.name, chat_id, location.name from users join location where users.location = location.id) where chat_id=$1", u.ChatID)
+		"select users.name, chat_id, location.name from users join location on users.location = location.id where chat_id=$1", u.ChatID)
 	if err != nil {
 		log.Fatalf(" update to user read %v", err)
+	}
+	if !rows.Next() {
+		return errors.New("User not found")
 	}
 	rows.Scan(u.Name, u.ChatID, u.Location)
 

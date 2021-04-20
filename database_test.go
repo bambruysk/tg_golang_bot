@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"os"
 	"reflect"
@@ -217,8 +218,73 @@ func TestUser_ReadDB(t *testing.T) {
 				ChatID:     0,
 				CurrHolde:  0,
 				CurrPlayer: &Player{},
-				Name:       "",
-				Location:   "",
+				Name:       "Hoba",
+				Location:   "Babar",
+			},
+			args: args{
+				conn: conn,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			u := &User{
+				State:      tt.fields.State,
+				ChatID:     tt.fields.ChatID,
+				CurrHolde:  tt.fields.CurrHolde,
+				CurrPlayer: tt.fields.CurrPlayer,
+				Name:       tt.fields.Name,
+				Location:   tt.fields.Location,
+			}
+			loc := Location{Name: u.Location}
+			loc.AddDB(conn)
+			u.CreateDB(conn)
+
+			if err := u.ReadDB(tt.args.conn); (err != nil) != tt.wantErr {
+				t.Errorf("User.ReadDB() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			loc.DeleteDB(conn)
+
+		})
+	}
+}
+
+func TestUser_CreateDB(t *testing.T) {
+	type fields struct {
+		State      DialogState
+		ChatID     int
+		CurrHolde  int
+		CurrPlayer *Player
+		Name       string
+		Location   string
+	}
+	type args struct {
+		conn *pgx.Conn
+	}
+	conn, err := ConnectDB()
+	if err != nil {
+		t.Fatalf("Connect to database fail %v", err)
+		return
+	}
+	defer conn.Close(context.Background())
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "",
+			fields: fields{
+				State:      0,
+				ChatID:     0,
+				CurrHolde:  0,
+				CurrPlayer: &Player{},
+				Name:       "Hoba",
+				Location:   "Babar",
 			},
 			args: args{
 				conn: conn,
@@ -236,8 +302,10 @@ func TestUser_ReadDB(t *testing.T) {
 				Name:       tt.fields.Name,
 				Location:   tt.fields.Location,
 			}
-			if err := u.ReadDB(tt.args.conn); (err != nil) != tt.wantErr {
-				t.Errorf("User.ReadDB() error = %v, wantErr %v", err, tt.wantErr)
+			loc := Location{Name: u.Location}
+			loc.AddDB(conn)
+			if err := u.CreateDB(tt.args.conn); (err != nil) != tt.wantErr {
+				t.Errorf("User.CreateDB() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
