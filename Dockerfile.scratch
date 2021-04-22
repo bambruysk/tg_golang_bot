@@ -1,0 +1,15 @@
+FROM golang:latest
+COPY main .
+COPY .env .
+COPY client_secret.json .
+# COPY key.pem /
+ENV TG_API_KEY="1088448942:AAGbDckx7aVCoa005afOE2bVwVejgiPMS4c"
+
+ENV DATABASE_URL="postgres://holde_tg_bot:holde_tg_bot@localhost:5433/test"
+
+EXPOSE 80 443 22
+
+COPY ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN chmod 644 /etc/ssl/certs/ca-certificates.crt && update-ca-certificates
+
+#CMD ["/go/main"]

@@ -13,10 +13,18 @@ import (
 )
 
 func main() {
+	log.Println("Bot read env")
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file", err)
 	}
+
+	tgApiKey := os.Getenv("TG_API_KEY")
+	if tgApiKey == "" {
+		log.Fatal("TG_API_KEY env not set")
+	}
+
+	log.Println("Bot read env", tgApiKey)
 
 	b, err := tb.NewBot(tb.Settings{
 		// You can also set custom API URL.
@@ -24,12 +32,12 @@ func main() {
 		URL: "https://api.telegram.org",
 
 		//	Token:  "1762186330:AAELm54VB5FAvLDPeoFPYSnkHOuWOLaj_wk",
-		Token:  os.Getenv("TG_API_KEY"),
+		Token:  tgApiKey,
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Bot cratione err", err)
 		return
 	}
 
