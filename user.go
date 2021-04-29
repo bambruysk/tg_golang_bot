@@ -61,6 +61,7 @@ type UserStorager interface {
 	Create(id UserID, user User)
 }
 
+// In memory
 type Users map[UserID]User
 
 func NewUsers() Users {

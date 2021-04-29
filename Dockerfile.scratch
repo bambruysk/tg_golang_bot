@@ -1,6 +1,7 @@
 FROM golang:latest
 COPY main .
 COPY .env .
+COPY wait-for-it.sh .
 COPY client_secret.json .
 # COPY key.pem /
 ENV TG_API_KEY="1088448942:AAGbDckx7aVCoa005afOE2bVwVejgiPMS4c"

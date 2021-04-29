@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS holdes (
 
 func ConnectDB() (*pgx.Conn, error) {
 
-	conn, err := pgx.Connect(context.Background(), "postgres://holde_tg_bot:holde_tg_bot@localhost:5433/test")
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
 	}
@@ -106,7 +106,7 @@ func (u *User) ReadDB(conn *pgx.Conn) error {
 	rows, err := conn.Query(context.Background(),
 		"select users.name, chat_id, location.name from users join location on users.location = location.id where chat_id=$1", u.ChatID)
 	if err != nil {
-		log.Fatalf(" update to user read %v", err)
+		return err
 	}
 	if !rows.Next() {
 		return errors.New("User not found")
@@ -138,4 +138,63 @@ func LocationsReadFromDB(conn *pgx.Conn) ([]Location, error) {
 func (l *Location) DeleteDB(conn *pgx.Conn) error {
 	_, err := conn.Exec(context.Background(), "delete from location where name=$1", l.Name)
 	return err
+}
+
+// In memory
+type UsersDB struct {
+	conn *pgx.Conn
+}
+
+func NewUsersDB() (UsersDB, error) {
+	conn, err := ConnectDB()
+	if err != nil {
+		log.Fatal("Database connect error")
+	}
+	return UsersDB{
+		conn: conn,
+	}, nil
+}
+
+func (u UsersDB) Get(id UserID) (User, error) {
+
+	// Get user by chat_id
+	user := User{
+		ChatID: int(id),
+	}
+	if err := user.ReadDB(u.conn); err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (u UsersDB) GetOrCreate(id UserID) (User, bool) {
+
+	user := User{
+		ChatID: int(id),
+	}
+
+	rows, err := u.conn.Query(context.Background(),
+		"select users.name, chat_id, location.name from users join location on users.location = location.id where chat_id=$1", user.ChatID)
+	if err != nil {
+		log.Fatalf("Database read error")
+	}
+	if !rows.Next() {
+		log.Print("Create new user")
+		if err := user.CreateDB(u.conn); err != nil {
+			log.Fatalf("Read database error")
+		}
+		return user, true
+	}
+	rows.Scan(user.Name, user.ChatID, user.Location)
+	return user, false
+}
+
+// TODO: it strange arguments
+func (u UsersDB) Create(id UserID, user User) {
+	if err := user.CreateDB(u.conn); err != nil {
+		log.Fatalf("Read database error")
+	}
+}
+func (u UsersDB) Update(id UserID, user User) error {
+	return user.UpdateDB(u.conn)
 }

@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+    bot:
+        image: cr.yandex/crppna4shcvmgdv1ma3c/holde-bot
+        depends_on:
+            db:
+                condition: service_healthy
+        links:
+            - db
+        command: ["./bot"]
+        restart: always
+
+
+    db: 
+        image: cr.yandex/crppna4shcvmgdv1ma3c/holde-bot_db
+        ports: 
+            - 5432:5432
+
+        volumes:
+            - database:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        restart: always
+  
+volumes:
+    database:    
