@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+
+	tb "gopkg.in/tucnak/telebot.v2"
+)
 
 type DialogState int
 
@@ -15,16 +19,19 @@ const (
 	EnterPlayerName
 	EnterUserName
 	EnterUserLoc
+	ChooseForUpgrade
+	UpgradeHolde
 )
 
 // Пользователь
 type User struct {
-	State      DialogState
-	ChatID     int
-	CurrHolde  int
-	CurrPlayer *Player
-	Name       string
-	Location   string
+	State       DialogState
+	ChatID      int
+	CurrHolde   int
+	CurrPlayer  *Player
+	Name        string
+	Location    string
+	LastMessage *tb.Message
 }
 
 func (u *User) SetState(state DialogState) {

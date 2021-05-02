@@ -66,14 +66,14 @@ func (dn *DialogNode) Next(update interface{}) DialogNode {
 
 // my dialog buttons
 
-var (
-	btnSettings   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Настройки")
-	btnCalculator = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Поместья")
-	btnMainMenu   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Главное меню")
-	btnAddHolde   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Добавить поместье")
-)
+// var (
+// 	btnSettings   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Настройки")
+// 	btnCalculator = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Поместья")
+// 	btnMainMenu   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Главное меню")
+// 	btnAddHolde   = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("Добавить поместье")
+// )
 
-var users UserStorager
+//var users UserStorager
 
 /*
 func TextHandler(m *tb.Message) {

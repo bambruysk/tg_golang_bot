@@ -24,7 +24,7 @@ func (m Money) String() string {
 }
 
 type HoldeGameSettings struct {
-	// HoldeNums 
+	// HoldeNums
 	HoldeNums int
 	// Размер мира по горизонтали
 	WorldSizeX int
@@ -37,7 +37,11 @@ type HoldeGameSettings struct {
 	// Time degradation coeffs
 	TimeDegradation float64
 	// Locations
-	Locations [] string
+	Locations []string
+	// Holde uprade cost byt level 1->2, 2->3, etc
+	HoldeLevelUpgradeCost []Money
+	// Holde maximum level
+	HoldeMaxLevel int
 }
 
 // Holde - basic structures  for holde
@@ -103,51 +107,63 @@ func (hr *HoldeResponce) Show() string {
 
 // we not use decimal type for money. Money round to ceil, for players fun
 
-var WorldSizeX = 10
-var WorldSizeY = 10
+var WorldSizeX = gameSettings.WorldSizeX
+var WorldSizeY = gameSettings.WorldSizeY
 var HoldesNumber = WorldSizeX * WorldSizeY
 
-var Settings = HoldeGameSettings{
-	MoneyPerHour:    2,
-	SynergyCoeff:    1,
-	TimeDegradation: 0.2,
-}
+// var Settings = HoldeGameSettings{
+// 	MoneyPerHour:    2,
+// 	SynergyCoeff:    1,
+// 	TimeDegradation: 0.2,
+// }
 
 func (s HoldeGameSettings) GetSynergy(num int) float64 {
 	return float64(num) * s.SynergyCoeff
 }
 
-type HoldeStorage map[int]*Holde
-
-func NewHoldeStorage() HoldeStorage {
-	//TODO: load from json or db
-	holdes := make(HoldeStorage)
-	init_time := time.Now()
-	for i := 0; i < HoldesNumber; i++ {
-		holdes[i] = &Holde{
-			Name:      "",
-			ID:        i,
-			Amount:    0,
-			Level:     1,
-			Owner:     "",
-			LastVisit: init_time,
-		}
-	}
-
-	// for debug purpose only
-	r:= rand.Perm(HoldesNumber)
-	for i := 0; i < HoldesNumber; i++ {
-		holdes[i].Amount = Money(r[i])
-	}
-
-	return holdes
+type HoldeStorage struct {
+	holdes map[int]*Holde
 }
 
-func (hs HoldeStorage) Get(id int) (*Holde, error) {
+func NewHoldeStorage() *HoldeStorage {
+	//TODO: load from json or db
+	hs := HoldeStorage{
+		holdes: make(map[int]*Holde),
+	}
+	//init_time := time.Now()
+	holde_list := gspread.ReadHoldes()
+	for i := 0; i < HoldesNumber; i++ {
+		hs.holdes[i] = &holde_list[i]
+	}
+
+	// TODO: Add save to db!
+
+	// for debug purpose only
+	r := rand.Perm(HoldesNumber)
+	for i := 0; i < HoldesNumber; i++ {
+		hs.holdes[i].Amount = Money(r[i])
+	}
+
+	return &hs
+}
+
+func (hs *HoldeStorage) Get(id int) (*Holde, error) {
 	if id < 0 || id >= HoldesNumber {
 		return nil, errors.New("Holde not found in storage")
 	}
-	return hs[id], nil
+	return hs.holdes[id], nil
+}
+
+func (hs *HoldeStorage) Update(holde *Holde) {
+	hs.holdes[holde.ID] = holde
+}
+
+func (hs *HoldeStorage) String() string {
+	res := "\n"
+	for _, h := range hs.holdes {
+		res += fmt.Sprintf("Holde : %d \t %s \t %d \n", h.ID, h.Name, h.Level)
+	}
+	return res
 }
 
 func getNeighbour(id int) []int {
@@ -225,7 +241,7 @@ func (h *Holde) Visit(dice int) Money {
 	// calculate money
 	money := h.Amount
 	for h := 0; h < hours; h++ {
-		money += Money(Settings.MoneyPerHour * (1 - float64(h)*Settings.TimeDegradation))
+		money += Money(gameSettings.MoneyPerHour * (1 - float64(h)*gameSettings.TimeDegradation))
 	}
 	h.LastVisit = time.Now()
 
@@ -256,8 +272,16 @@ func (hs HoldeStorage) CalculateHoldes(req HoldeRequest) (Money, error) {
 	for _, c := range clusters {
 		if len(c) > 1 {
 			// add cluster bonus example
-			money += Money(len(c) * int(Settings.SynergyCoeff))
+			money += Money(len(c) * int(gameSettings.SynergyCoeff))
 		}
 	}
 	return money, nil
+}
+
+func (h *Holde) Upgrade() bool {
+	if h.Level == gameSettings.HoldeMaxLevel {
+		return false
+	}
+	h.Level++
+	return true
 }

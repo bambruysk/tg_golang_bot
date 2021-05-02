@@ -8,51 +8,64 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+var gspread = NewGspreadHoldes()
+var gameSettings = gspread.ReadSettings()
+
+var holdeStorage = NewHoldeStorage()
+var playerStorage = NewPlayerStorage(holdeStorage)
+
+var (
+
+	// Окно приветсвтия - регистрация  -
+
+	// кнопка вызова главного меню
+	//btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
+	// Главное меню - Настройки | Считать
+	menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	btnSettings   = menuMain.Data("Настройки", "settings")
+	btnCalculator = menuMain.Data("Поместья", "holdes")
+
+	// Настройки - Oпция 1 | Oпция 2 | Oпция 3
+	// Считать  -  Имя игрока - Добавить поместья - Снять кэш - Улучшить поместье.
+	//                             |      |
+	//								> ----^
+
+	// Universal markup builders.
+	// selector = &tb.ReplyMarkup{}
+
+	addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+
+	addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить это поместье", "add_holde")
+	addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое", "cancel_add_holde")
+
+	addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+
+	calcHoldeButton    = addNewHoldeMenuKeyboard.Data("Обсчитать поместья", "calc_all_holde")
+	addHoldeMoreButton = addNewHoldeMenuKeyboard.Data("Добавить еще поместий", "add_more_holde")
+
+	upgradeKeyboard    = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	letUpgradeButton   = upgradeKeyboard.Data("Улушить поместье", "let_upgrade")
+	endCalculateButton = upgradeKeyboard.Data("Закочнить расчеты", "end_caluclate")
+
+	locSelectKbd = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+
+	menuSettingsKbd      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	changeUsernameButton = menuSettingsKbd.Data("Изменить имя", "change_user_name")
+	changeUserLocButton  = menuSettingsKbd.Data("Изменить локацию", "change_user_loc")
+	backToMainMenuButton = (&tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}).Data("В главное меню", "back_main_menu")
+
+	holdeUpgradeKbd        = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	holdeUpgradeApproveBtn = holdeUpgradeKbd.Data("Улучшить", "upgrade_approve")
+	holdeUpgradeCancelBtn  = holdeUpgradeKbd.Data("Отмена", " upgrade_cancel")
+)
+var users UserStorager
+
 func AddBotLogic(b *tb.Bot) {
 
-	holdeStorage := NewHoldeStorage()
-	playerStorage := NewPlayerStorage(&holdeStorage)
+	// gspread := NewGspreadHoldes()
 
-	gspread := NewGspreadHoldes()
+	// gameSettings := gspread.ReadSettings()
 
-	gameSettings := gspread.ReadSettings()
-
-	var (
-
-		// Окно приветсвтия - регистрация  -
-
-		// кнопка вызова главного меню
-		//btnMainMenu = (&tb.ReplyMarkup{ResizeReplyKeyboard: true}).Text("В главное меню")
-		// Главное меню - Настройки | Считать
-		menuMain      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-		btnSettings   = menuMain.Data("Настройки", "settings")
-		btnCalculator = menuMain.Data("Поместья", "holdes")
-
-		// Настройки - Oпция 1 | Oпция 2 | Oпция 3
-		// Считать  -  Имя игрока - Добавить поместья - Снять кэш - Улучшить поместье.
-		//                             |      |
-		//								> ----^
-
-		// Universal markup builders.
-		// selector = &tb.ReplyMarkup{}
-
-		addHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-
-		addHoldeButton       = addHoldeMenuKeyboard.Data("Добавить поместье", "add_holde")
-		addHoldeCancelButton = addHoldeMenuKeyboard.Data("Нет, другое", "cancel_add_holde")
-
-		addNewHoldeMenuKeyboard = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-
-		calcHoldeButton    = addNewHoldeMenuKeyboard.Data("Обсчитать поместья", "calc_all_holde")
-		addHoldeMoreButton = addNewHoldeMenuKeyboard.Data("Добавить еще поместий", "add_more_holde")
-
-		menuSettingsKbd      = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-		changeUsernameButton = menuSettingsKbd.Data("Изменить имя", "change_user_name")
-		changeUserLocButton  = menuSettingsKbd.Data("Изменить локацию", "change_user_loc")
-		backToMainMenuButton = (&tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}).Data("В главное меню", "back_main_menu")
-	)
-
-	var users UserStorager
 	users = NewUsers()
 
 	log.Println(holdeStorage)
@@ -78,6 +91,11 @@ func AddBotLogic(b *tb.Bot) {
 		menuSettingsKbd.Row(changeUsernameButton),
 		menuSettingsKbd.Row(changeUserLocButton),
 		menuSettingsKbd.Row(backToMainMenuButton),
+	)
+
+	upgradeKeyboard.Inline(
+		upgradeKeyboard.Row(letUpgradeButton),
+		upgradeKeyboard.Row(endCalculateButton),
 	)
 
 	// Command: /start <PAYLOAD>
@@ -109,7 +127,7 @@ func AddBotLogic(b *tb.Bot) {
 
 		user, err := users.Get(id)
 		if err != nil {
-			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заово. Жми /start")
+			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
 			return
 		}
 
@@ -148,11 +166,11 @@ func AddBotLogic(b *tb.Bot) {
 			{
 				dice, err := strconv.Atoi(m.Text)
 				if err != nil {
-					b.Send(m.Sender, "Неправильынй бросок. Введите 1- 10")
+					b.Send(m.Sender, "Неправильынй бросок. Введите 1-10")
 					return
 				}
 				if dice < 1 || dice > 10 {
-					b.Send(m.Sender, "Неправильынй бросок. Введите 1- 10")
+					b.Send(m.Sender, "Неправильынй бросок. Введите 1-10")
 					return
 				}
 				request := HoldeRequestItem{
@@ -175,7 +193,7 @@ func AddBotLogic(b *tb.Bot) {
 				if created {
 					b.Send(m.Sender, "Свежее мясо!")
 				} else {
-					b.Send(m.Sender, "Знакомые всё лица!")
+					b.Send(m.Sender, "Знакомые все лица!")
 				}
 				user.CurrPlayer = &player
 				user.State = AddHolde
@@ -199,28 +217,8 @@ func AddBotLogic(b *tb.Bot) {
 
 	})
 
-	b.Handle(&calcHoldeButton, func(m *tb.Message) {
-		log.Println("calcHoldeButton", "EnterPlayerName:")
-		id := UserID(m.Sender.ID)
-		user, err := users.Get(id)
-		if err != nil {
-			b.Send(m.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
-			return
-		}
-		resp, err := user.CurrPlayer.HandleReq()
-		users.Update(id, user)
-		b.Send(m.Sender, resp.Show())
-
-	})
-	// On reply button pressed (message)
-	// b.Handle(&btnHelp, func(m *tb.Message) {
-	// 	log.Println("User", m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
-	// 	log.Println("Message", m.Text)
-	// 	b.Send(m.Sender, "Hello World!", selector)
-	// })
-
 	b.Handle(&btnCalculator, func(c *tb.Callback) {
-		log.Println("calcHoldeButton", "EnterPlayerName:")
+		log.Println("btnCalculator")
 		id, user, notFound := GetUserFromCallbackByID(c, users, b)
 		if notFound {
 			return
@@ -253,12 +251,12 @@ func AddBotLogic(b *tb.Bot) {
 		}
 
 		user.SetState(AddHolde)
-		users.Update(id, user)
 
 		b.Send(c.Sender, "Введи номер поместья")
 		b.Respond(c, &tb.CallbackResponse{
 			Text: "Еще поместий",
 		})
+		users.Update(id, user)
 	})
 	// calcHoldeButton
 	b.Handle(&calcHoldeButton, func(c *tb.Callback) {
@@ -274,28 +272,29 @@ func AddBotLogic(b *tb.Bot) {
 			return
 		}
 
-		users.Update(id, user)
-		b.Send(c.Sender, resp.Show())
+		b.Send(c.Sender, resp.Show(), upgradeKeyboard)
 		b.Respond(c, &tb.CallbackResponse{
 			Text: "Еще поместий",
 		})
+		users.Update(id, user)
 
 	})
 
 	b.Handle(&btnSettings, func(c *tb.Callback) {
+
 		id, user, notFound := GetUserFromCallbackByID(c, users, b)
 		if notFound {
 			return
 		}
 
 		user.SetState(UserSettings)
-		users.Update(id, user)
-
 		b.Send(c.Sender, user.ShowProfile(), menuSettingsKbd)
 
 		b.Respond(c, &tb.CallbackResponse{
 			Text: "Настройки",
 		})
+
+		users.Update(id, user)
 	})
 
 	b.Handle(&changeUsernameButton, func(c *tb.Callback) {
@@ -304,17 +303,17 @@ func AddBotLogic(b *tb.Bot) {
 			return
 		}
 		user.SetState(EnterUserName)
-		users.Update(id, user)
 
 		b.Send(c.Sender, "Введи свое имя")
 
 		b.Respond(c, &tb.CallbackResponse{
 			Text: "",
 		})
+		users.Update(id, user)
 	})
 
 	//-----------
-	locSelectKbd := &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	//locSelectKbd := &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 	locationNum := len(gameSettings.Locations)
 	locationSelectButtons := make([]tb.Btn, locationNum)
 	for i, loc := range gameSettings.Locations {
@@ -324,11 +323,14 @@ func AddBotLogic(b *tb.Bot) {
 			if notFound {
 				return
 			}
+
+			b.Send(c.Sender, "Введи свое имя")
+
 			user.Location = c.Data // i m not sure what this is correct
 			log.Println(*c, c.Data)
 			user.SetState(UserSettings)
-			users.Update(id, user)
 			b.Send(c.Sender, "Твой профиль в игре \nИмя: \t"+user.Name+"\n Локация: \t"+user.Location+"\n Выбери, что изменить? ", menuSettingsKbd)
+			users.Update(id, user)
 		})
 
 	}
@@ -339,21 +341,40 @@ func AddBotLogic(b *tb.Bot) {
 
 	locSelectKbd.Inline(locationSelectButtonsRows...)
 
+	holdeUpgradeKbd.Inline(
+		holdeUpgradeKbd.Row(holdeUpgradeApproveBtn),
+		holdeUpgradeKbd.Row(holdeUpgradeCancelBtn),
+	)
+
+	b.Handle(&letUpgradeButton, LetUpgradeButtonHandler)
+
+	b.Handle(&holdeUpgradeApproveBtn, HoldeUpgradeApproveButtonHandler)
+
+	b.Handle(&holdeUpgradeCancelBtn, HoldeUpgradeCancelBtnHandler)
+
+	b.Handle(&endCalculateButton, EndCalculateButtonHandler)
+
 	b.Handle(&changeUserLocButton, func(c *tb.Callback) {
 		id, user, notFound := GetUserFromCallbackByID(c, users, b)
 		if notFound {
 			return
 		}
+		if user.LastMessage != nil {
+			b.Delete(user.LastMessage)
+		}
+
+		var err error
 		user.SetState(EnterUserLoc)
-		users.Update(id, user)
 
 		b.Send(c.Sender, "Выбери локацию", locSelectKbd)
-
-		// add
+		if err != nil {
+			log.Println("Send messeage fail: ", err)
+		}
 
 		b.Respond(c, &tb.CallbackResponse{
 			Text: "",
 		})
+		users.Update(id, user)
 	})
 
 	b.Handle(&backToMainMenuButton, func(c *tb.Callback) {
@@ -361,40 +382,19 @@ func AddBotLogic(b *tb.Bot) {
 		if notFound {
 			return
 		}
+		if user.LastMessage != nil {
+			b.Delete(user.LastMessage)
+		}
+
+		var err error
 		user.SetState(MainMenu)
-		users.Update(id, user)
 
 		b.Send(c.Sender, "Выбери действие", menuMain)
-
+		if err != nil {
+			log.Println("Send messeage fail: ", err)
+		}
+		users.Update(id, user)
 	})
-
-	// Send hand
-
-	// // On inline button pressed (callback)
-	// b.Handle(&btnPrev, func(c *tb.Callback) {
-	// 	// ...
-	// 	// Always respond!
-	// 	b.Respond(c, &tb.CallbackResponse{
-	// 		Text: c.Message.Text,
-	// 	})
-	// })
-
-	// type DialogNode struct {
-	// 	// Текст ии дугое сообщение оторжаео при переходе на данный узел
-	// 	Content DialogContent
-	// 	// Клавиатура
-	// 	Keyboard *tb.ReplyMarkup
-	// 	//
-	// }
-
-	// On reply button pressed (message)
-	// b.Handle(&btnMainMenu, func(m *tb.Message) {
-
-	// 	log.Println("main menu", m.Text)
-
-	// 	b.Send(m.Sender, "Выберите, что бы вы хотели сделать", mainMenu)
-
-	// })
 
 	b.Start()
 
@@ -402,11 +402,15 @@ func AddBotLogic(b *tb.Bot) {
 
 func GetUserFromCallbackByID(c *tb.Callback, users UserStorager, b *tb.Bot) (UserID, User, bool) {
 	id := UserID(c.Sender.ID)
+	if c.Message != nil {
+		b.Delete(c.Message)
+	}
 	user, err := users.Get(id)
 	if err != nil {
 		b.Send(c.Sender, "Случилась какая то ошибка. давай начнем заново. Жми /start")
 		return 0, User{}, true
 	}
+
 	return id, user, false
 }
 
@@ -416,3 +420,133 @@ func GetUserFromCallbackByID(c *tb.Callback, users UserStorager, b *tb.Bot) (Use
 
 // 	return viper.ReadConfig()
 // }
+
+func LetUpgradeButtonHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+	user.SetState(ChooseForUpgrade)
+	if c.Message != nil {
+		b.Delete(c.Message)
+	}
+
+	holdesForUpgrade := make([]*Holde, 0)
+
+	for _, h := range user.CurrPlayer.Request.Holdes {
+		hol, err := holdeStorage.Get(h.HoldeID)
+		if err != nil {
+			log.Println(err)
+		}
+		if hol.Level < gameSettings.HoldeMaxLevel {
+			holdesForUpgrade = append(holdesForUpgrade, hol)
+		}
+	}
+	if len(holdesForUpgrade) == 0 {
+		user.SetState(MainMenu)
+		users.Update(id, user)
+		b.Send(c.Sender, "Нет поместий для улучшения", menuMain)
+		return
+	}
+
+	log.Println("Holdes  for upgrade", holdesForUpgrade)
+	holdeSelKbd := &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	holdeSelectionButtons := make([]tb.Btn, len(holdesForUpgrade)+1)
+
+	for i, holde := range holdesForUpgrade {
+
+		holdeSelectionButtons[i] = holdeSelKbd.Data(
+			fmt.Sprintf("%d %s Ур.%d", holde.ID, holde.Name, holde.Level), "holdesel_"+strconv.Itoa(holde.ID), strconv.Itoa(holde.ID))
+
+		b.Handle(&holdeSelectionButtons[i], func(c *tb.Callback) {
+			//upgrade kbd
+			id, user, notFound := GetUserFromCallbackByID(c, users, b)
+			if notFound {
+				return
+			}
+			if c.Message != nil {
+				b.Delete(c.Message)
+			}
+			holdeId, err := strconv.Atoi(c.Data)
+
+			user.CurrHolde = holdeId
+
+			holde, err := holdeStorage.Get(holdeId)
+			log.Println(holde)
+			if err != nil {
+				b.Send(c.Sender, "Случилась какая-то ошибка. давай начнем заново. Жми /start")
+				return
+			}
+			msg := fmt.Sprintf("Улучшение поместья стоит %s монет", gameSettings.HoldeLevelUpgradeCost[holde.Level-1].String())
+			b.Send(c.Sender, msg, holdeUpgradeKbd)
+			user.SetState(UpgradeHolde)
+			users.Update(id, user)
+
+		})
+
+	}
+	holdeSelectionButtons[len(holdesForUpgrade)] = holdeSelKbd.Data("Отмена", "upgrade_holde_cancel_button")
+
+	holdeSelectionButtons[len(holdesForUpgrade)] = endCalculateButton
+	holdeSelectButtonsRows := make([]tb.Row, len(holdesForUpgrade)+1)
+	for i, _ := range holdeSelectionButtons {
+		holdeSelectButtonsRows[i] = holdeSelKbd.Row(holdeSelectionButtons[i])
+	}
+	holdeSelKbd.Inline(holdeSelectButtonsRows...)
+	users.Update(id, user)
+	b.Send(c.Sender, "Выбери поместье для улучшения", holdeSelKbd)
+
+}
+
+func HoldeUpgradeApproveButtonHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+	user.SetState(ChooseForUpgrade)
+	log.Println("User curr holde  ", user.CurrHolde)
+	holde, err := holdeStorage.Get(user.CurrHolde)
+	if err != nil {
+		b.Send(c.Sender, "Случилась какая-то ошибка. давай начнем заново. Жми /start")
+		return
+	}
+
+	holde.Upgrade()
+
+	users.Update(id, user)
+
+	holdeStorage.Update(holde)
+
+	b.Send(c.Sender, fmt.Sprintf("Поместье %d %s улучшено до %d уровня", holde.ID, holde.Name, holde.Level))
+	b.Send(c.Sender, "Выберите следующее поместье для улучшения", upgradeKeyboard)
+}
+
+func HoldeUpgradeCancelBtnHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+	user.SetState(UpgradeHolde)
+	users.Update(id, user)
+	b.Send(c.Sender, "Выбери опцию", upgradeKeyboard)
+
+}
+
+// endCalculateButton
+
+func EndCalculateButtonHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+
+	b.Send(c.Sender, "До свидания")
+
+	user.CurrPlayer = nil
+	user.CurrHolde = -1
+
+	user.SetState(UpgradeHolde)
+	users.Update(id, user)
+	b.Send(c.Sender, "Выбери опцию", menuMain)
+
+}

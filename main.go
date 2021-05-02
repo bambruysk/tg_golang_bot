@@ -13,6 +13,8 @@ import (
 
 var logger BotLog
 
+var b *tb.Bot
+
 func main() {
 	log.Println("Bot read env")
 	err := godotenv.Load()
@@ -35,7 +37,7 @@ func main() {
 	}
 	conn.Close(context.Background())
 
-	b, err := tb.NewBot(tb.Settings{
+	b, err = tb.NewBot(tb.Settings{
 		// You can also set custom API URL.
 		// If field is empty it equals to "https://api.telegram.org".
 		URL: "https://api.telegram.org",
