@@ -21,6 +21,7 @@ const (
 	EnterUserLoc
 	ChooseForUpgrade
 	UpgradeHolde
+	OceanHeartState
 )
 
 // Пользователь

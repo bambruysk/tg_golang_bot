@@ -10,10 +10,11 @@ type PlayerStorager interface {
 }
 
 type Player struct {
-	Name    string
-	Holdes  []*Holde
-	Request HoldeRequest
-	World   *HoldeStorage
+	Name          string
+	HasOceanHeart bool
+	Holdes        []*Holde
+	Request       HoldeRequest
+	World         *HoldeStorage
 }
 
 func NewPlayer(name string, world *HoldeStorage) Player {
@@ -35,7 +36,7 @@ func (p *Player) HandleReq() (HoldeResponce, error) {
 	world := p.World
 	req := p.Request
 	resp, err := world.CalculateHoldes(req)
-	
+
 	for _, h := range req.Holdes {
 		holde, err := world.Get(h.HoldeID)
 		if err != nil {
@@ -44,7 +45,6 @@ func (p *Player) HandleReq() (HoldeResponce, error) {
 		holde.Owner = p.Name
 		holde.Amount = 0
 	}
-	
 
 	if err != nil {
 		return HoldeResponce{}, err

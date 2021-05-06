@@ -57,7 +57,12 @@ var (
 	holdeUpgradeKbd        = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 	holdeUpgradeApproveBtn = holdeUpgradeKbd.Data("Улучшить", "upgrade_approve")
 	holdeUpgradeCancelBtn  = holdeUpgradeKbd.Data("Отмена", " upgrade_cancel")
+
+	oceanHeartKbd    = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+	oceanHeartYesBtn = oceanHeartKbd.Data("Да", "ocean_heart_yes")
+	oceanHeartNoBtn  = oceanHeartKbd.Data("Нет", "ocean_heart_no")
 )
+
 var users UserStorager
 
 func AddBotLogic(b *tb.Bot) {
@@ -96,6 +101,10 @@ func AddBotLogic(b *tb.Bot) {
 	upgradeKeyboard.Inline(
 		upgradeKeyboard.Row(letUpgradeButton),
 		upgradeKeyboard.Row(endCalculateButton),
+	)
+
+	oceanHeartKbd.Inline(
+		oceanHeartKbd.Row(oceanHeartYesBtn, oceanHeartNoBtn),
 	)
 
 	// Command: /start <PAYLOAD>
@@ -198,8 +207,10 @@ func AddBotLogic(b *tb.Bot) {
 				user.CurrPlayer = &player
 				user.State = AddHolde
 
-				b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
-				user.SetState(AddHolde)
+				b.Send(m.Sender, "Хорошо. У игрока есть Сердце Океана?", oceanHeartKbd)
+
+				//b.Send(m.Sender, "Очень хорошо. Введи номер поместья")
+				user.SetState(OceanHeartState)
 			}
 
 		case EnterUserName:
@@ -347,6 +358,10 @@ func AddBotLogic(b *tb.Bot) {
 	)
 
 	b.Handle(&letUpgradeButton, LetUpgradeButtonHandler)
+
+	b.Handle(&oceanHeartYesBtn, OceanHeartBtnYesHandler)
+
+	b.Handle(&oceanHeartNoBtn, OceanHeartBtnNoHandler)
 
 	b.Handle(&holdeUpgradeApproveBtn, HoldeUpgradeApproveButtonHandler)
 
@@ -533,7 +548,6 @@ func HoldeUpgradeCancelBtnHandler(c *tb.Callback) {
 }
 
 // endCalculateButton
-
 func EndCalculateButtonHandler(c *tb.Callback) {
 	id, user, notFound := GetUserFromCallbackByID(c, users, b)
 	if notFound {
@@ -546,7 +560,37 @@ func EndCalculateButtonHandler(c *tb.Callback) {
 	user.CurrHolde = -1
 
 	user.SetState(UpgradeHolde)
-	users.Update(id, user)
 	b.Send(c.Sender, "Выбери опцию", menuMain)
+	users.Update(id, user)
+
+}
+
+func OceanHeartBtnYesHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+
+	user.CurrPlayer.HasOceanHeart = true
+
+	b.Send(c.Sender, "Хорошо. Введи номер поместья")
+
+	user.SetState(AddHolde)
+	users.Update(id, user)
+
+}
+
+func OceanHeartBtnNoHandler(c *tb.Callback) {
+	id, user, notFound := GetUserFromCallbackByID(c, users, b)
+	if notFound {
+		return
+	}
+
+	user.CurrPlayer.HasOceanHeart = false
+
+	b.Send(c.Sender, "Хорошо. Введи номер поместья")
+
+	user.SetState(AddHolde)
+	users.Update(id, user)
 
 }
